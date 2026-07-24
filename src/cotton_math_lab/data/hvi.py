@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from cotton_math_lab.exceptions import InvalidSpecError
+
 FEATURES: tuple[str, ...] = (
     "micronaire",   # índice de finura/maturidade
     "uhml",         # comprimento (mm)
@@ -29,10 +31,43 @@ class HVISpec:
     correlation: np.ndarray
 
     def __post_init__(self) -> None:
-        # arrays imutáveis: o spec é a "verdade" do experimento e não deve
-        # ser alterado por engano em nenhum ponto do laboratório
+        self._validate()
         for arr in (self.means, self.stds, self.correlation):
             arr.setflags(write=False)
+
+    def _validate(self) -> None:
+        k = len(self.features)
+
+        if self.means.shape != (k,) or self.stds.shape != (k,):
+            raise InvalidSpecError(
+                f"dimensões incompatíveis: {k} features, "
+                f"means={self.means.shape}, stds={self.stds.shape}"
+            )
+
+        if self.correlation.shape != (k, k):
+            raise InvalidSpecError(
+                f"dimensões incompatíveis: correlação {self.correlation.shape} "
+                f"para {k} features"
+            )
+
+        if np.any(self.stds <= 0):
+            bad = [f for f, s in zip(self.features, self.stds, strict=True) if s <= 0]
+            raise InvalidSpecError(f"desvio-padrão deve ser positivo: {bad}")
+
+        if not np.allclose(self.correlation, self.correlation.T, atol=1e-12):
+            raise InvalidSpecError("matriz de correlação deve ser simétrica")
+
+        if not np.allclose(np.diag(self.correlation), 1.0, atol=1e-12):
+            raise InvalidSpecError("diagonal da correlação deve ser 1.0")
+
+        try:
+            np.linalg.cholesky(self.correlation)
+        except np.linalg.LinAlgError as exc:
+            eigenvalues = np.linalg.eigvalsh(self.correlation)
+            raise InvalidSpecError(
+                f"matriz de correlação não é positiva-definida "
+                f"(menor autovalor: {eigenvalues.min():.4f})"
+            ) from exc
 
     @property
     def covariance(self) -> np.ndarray:
