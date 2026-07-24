@@ -20,3 +20,19 @@ oracle = [
     "scipy>=1.18.0",
     "torch>=2.13.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: testes rápidos, sem dependência externa",
+    "oracle: valida a implementação contra scipy/sklearn/torch",
+    "slow: testes de convergência ou estatísticos com muitas amostras",
+]
+addopts = "-q --strict-markers"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cotton_math_lab"]
