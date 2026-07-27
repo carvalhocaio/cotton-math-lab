@@ -3,6 +3,7 @@
 import numpy as np
 
 from cotton_math_lab.exceptions import LinAlgError
+from cotton_math_lab.linalg.qr import qr_householder
 
 
 def power_iteration(
@@ -80,3 +81,41 @@ def eigen_spectrum(
         residual = residual - value * np.outer(vector, vector)
 
     return eigenvalues, eigenvectors
+
+def qr_algorithm(
+    matrix: np.ndarray,
+    *,
+    max_iter: int = 1000,
+    tol: float = 1e-12,
+    return_iters: bool = False,
+):
+    """Espectro completo de uma matriz simétrica via iteração QR sem shift.
+
+    A cada passo, fatora Aₖ = QₖRₖ e recompõe na ordem trocada:
+    Aₖ₊₁ = RₖQₖ. Como Aₖ₊₁ = Qₖᵀ Aₖ Qₖ, cada passo é uma transformação de
+    similaridade ortogonal — os autovalores nunca mudam, só a base. A
+    sequência converge para uma matriz diagonal cujos elementos são os
+    autovalores, e o produto acumulado dos Qₖ converge para os autovetores.
+
+    Sem shift, a convergência é geométrica na razão |λₖ₊₁/λₖ| — o mesmo
+    mecanismo da power iteration, porque o QR algorithm é, estruturalmente,
+    iteração de subespaço simultânea. Gaps estreitos convergem devagar.
+    """
+    n = matrix.shape[0]
+    current = matrix.astype(np.float64).copy()
+    accumulated_q = np.eye(n)
+
+    for iteration in range(1, max_iter + 1):
+        q, r = qr_householder(current)
+        current = r @ q
+        accumulated_q = accumulated_q @ q
+
+        off_diagonal_norm = np.sqrt(np.sum(np.tril(current, k=-1) ** 2))
+        if off_diagonal_norm < tol:
+            break
+
+    eigenvalues = np.diag(current)
+
+    if return_iters:
+        return eigenvalues, accumulated_q, iteration
+    return eigenvalues, accumulated_q
