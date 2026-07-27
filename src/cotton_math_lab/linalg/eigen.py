@@ -44,3 +44,39 @@ def power_iteration(
     if return_iters:
         return eigenvalue, vector, iteration
     return eigenvalue, vector
+
+
+def eigen_spectrum(
+    matrix: np.ndarray,
+    *,
+    seed: int,
+    k: int | None = None,
+    max_iter: int = 2000,
+    tol: float = 1e-13,
+):
+    """Os `k` maiores autovalores (decrescente) e autovetores, por deflação.
+
+    Assume `matrix` simétrica. Após extrair (λᵢ, vᵢ) por power iteration,
+    subtrai λᵢ·vᵢvᵢᵀ da matriz — a deflação de Hotelling — de modo que a
+    próxima iteração encontre o par seguinte. Válido porque autovetores de
+    uma matriz simétrica são mutuamente ortogonais.
+    """
+    rows, cols = matrix.shape
+    if rows != cols:
+        raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
+
+    n_components = rows if k is None else k
+    residual = matrix.astype(np.float64).copy()
+
+    eigenvalues = np.empty(n_components)
+    eigenvectors = np.empty((rows, n_components))
+
+    for i in range(n_components):
+        value, vector = power_iteration(
+            residual, seed=seed, max_iter=max_iter, tol=tol
+        )
+        eigenvalues[i] = value
+        eigenvectors[:, i] = vector
+        residual = residual - value * np.outer(vector, vector)
+
+    return eigenvalues, eigenvectors
