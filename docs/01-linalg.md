@@ -56,6 +56,35 @@ $$
 
 onde $v^*$ é o autovetor verdadeiro e $\varepsilon$ representa um pequeno erro, a correção de primeira ordem do quociente de Rayleigh desaparece. Isso ocorre porque o autovetor verdadeiro é um ponto estacionário do quociente de Rayleigh, fazendo com que apenas termos proporcionais a $\varepsilon^2$ permaneçam.
 
+**A prova**, para fechar o argumento sem deixar como afirmação solta:
+
+Seja $v = v^* + \varepsilon u$, com $u \perp v^*$ e $\lVert v^* \rVert = 1$. Então
+
+$$
+R(v) = \frac{v^\top A v}{v^\top v}
+= \frac{\lambda^* + 2\varepsilon\, u^\top A v^* + \varepsilon^2 u^\top A u}
+       {1 + \varepsilon^2 \lVert u \rVert^2}.
+$$
+
+Como $v^*$ é autovetor, $Av^* = \lambda^* v^*$, e como $u \perp v^*$, o termo
+cruzado se anula exatamente:
+
+$$
+2\varepsilon\, u^\top A v^* = 2\varepsilon \lambda^* (u^\top v^*) = 0.
+$$
+
+Não é uma aproximação — é uma identidade que vale para qualquer $\varepsilon$.
+Sobra apenas
+
+$$
+R(v) = \lambda^* + \varepsilon^2\left(u^\top A u - \lambda^* \lVert u \rVert^2\right) + O(\varepsilon^4).
+$$
+
+O termo de primeira ordem em $\varepsilon$ nunca existiu: ele desaparece porque
+$v^*$ é ponto estacionário do quociente de Rayleigh, não por coincidência
+numérica. É essa identidade que garante, de primeiros princípios, que um erro
+$O(\varepsilon)$ no autovetor produz um erro $O(\varepsilon^2)$ no autovalor.
+
 Como consequência, enquanto o erro do autovetor é da ordem de
 
 $$
