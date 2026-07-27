@@ -233,3 +233,63 @@ substitui a deflação de Hotelling: ele usa exatamente estas reflexões de
 Householder para reduzir a matriz e depois itera $A_{k+1} = R_k Q_k$
 (fatoração e produto na ordem trocada) sem nunca acumular o erro que a
 deflação sequencial carrega.
+
+---
+
+## Algoritmo QR: fechando o módulo
+
+A cada passo, fatora $A_k = Q_k R_k$ e recompõe na ordem trocada:
+$A_{k+1} = R_k Q_k$.
+
+### A identidade que faz tudo funcionar
+
+$$
+A_{k+1} = R_k Q_k = Q_k^\top (Q_k R_k) Q_k = Q_k^\top A_k Q_k.
+$$
+
+Cada passo é uma **transformação de similaridade ortogonal**. Isso importa
+porque similaridade preserva o espectro exatamente: $A_k$ e $A_{k+1}$ têm os
+mesmos autovalores, sempre, para qualquer $k$. O algoritmo não "calcula" os
+autovalores — ele só muda a base em que a matriz é representada, até a base
+escolhida ser aquela em que a matriz já é diagonal. Nessa base, os
+autovalores estão, por definição, na diagonal.
+
+### O trade-off que amarra os três ciclos do módulo
+
+O algoritmo QR resolve exatamente o problema que a deflação de Hotelling
+tinha: como usa Householder a cada fatoração, não há subtração de
+quantidades quase iguais, não há cancelamento catastrófico, e a
+ortogonalidade dos autovetores recuperados não degrada — o teste
+`test_no_orthogonality_degradation_across_deflation_like_use` prova isso até
+$10^{-8}$ mesmo após reduzir 8 dimensões.
+
+Mas ele herda, sem disfarce, o problema de velocidade da power iteration.
+Estruturalmente, o QR algorithm é uma **iteração de subespaço simultânea** —
+em vez de perseguir um único autovetor dominante, persegue um subespaço
+inteiro ao mesmo tempo, mas o mecanismo de convergência é o mesmo: geométrico
+na razão $|\lambda_{k+1}/\lambda_k|$ entre autovalores consecutivos. O
+experimento no protótipo tornou isso concreto: gap largo ($\lambda_1{=}10$,
+$\lambda_2{=}1$) convergiu em 32 iterações; o mesmo tamanho de matriz com gap
+estreito ($\lambda_1{=}10$, $\lambda_2{=}9.999$) não convergiu nem em 3000.
+
+Não existe almoço grátis aqui: você trocou "impreciso perto do fim do
+espectro" por "lento perto de autovalores próximos". Nenhum dos três métodos
+deste módulo — power iteration, deflação, QR sem shift — escapa de um dos
+dois problemas.
+
+### O que fica de fora, por honestidade
+
+A correção de produção para a lentidão é o **shift de Wilkinson**: subtrair
+de $A_k$ uma estimativa do autovalor mais próximo antes de cada fatoração,
+o que acelera a convergência de linear para cúbica — poucas iterações bastam
+mesmo com gaps estreitos. Fora do escopo deste módulo implementar, mas vale
+registrar que o problema tem solução conhecida, e qual é o princípio dela.
+
+### Fechando o ciclo do Módulo 1
+
+Três métodos, um só objetivo (autovalores), três trade-offs diferentes:
+power iteration é simples, mas só dá o autovalor dominante; deflação estende
+para o espectro inteiro, mas acumula erro; QR corrige o erro, mas herda a
+lentidão. É exatamente esse tipo de mapa — não "qual método é o melhor", mas
+"qual dor cada método troca por qual outra" — que separa julgar de
+primeiros princípios de decorar qual função chamar.
