@@ -293,3 +293,98 @@ para o espectro inteiro, mas acumula erro; QR corrige o erro, mas herda a
 lentidão. É exatamente esse tipo de mapa — não "qual método é o melhor", mas
 "qual dor cada método troca por qual outra" — que separa julgar de
 primeiros princípios de decorar qual função chamar.
+
+---
+
+# PCA Aplicado — Fechando o Ciclo com os Dados HVI
+
+Esta seção aplica o `qr_algorithm` do módulo a um problema real: reduzir os
+oito parâmetros HVI a um punhado de componentes que capturam a maior parte
+da variância. É aqui que a matemática abstrata dos três ciclos anteriores
+encontra o gerador sintético do Módulo 0.
+
+## PCA via covariância
+
+$$
+\Sigma = \frac{1}{n-1} X_c^\top X_c, \qquad X_c = X - \bar{X}
+$$
+
+Os componentes principais são os autovetores de $\Sigma$, ordenados pelo
+autovalor correspondente (a variância explicada por aquela direção). É a
+rota mais direta: forma a matriz de covariância explicitamente e decompõe
+com o `qr_algorithm` já validado no ciclo anterior.
+
+## A pegadinha: PCA é sensível à escala das features
+
+Rodando `pca_via_covariance` sem padronizar nos dados HVI reais (5000
+fardos, seed 2024), o primeiro componente principal saiu quase puro em uma
+única feature:
+
+| Feature         | Loading em PC1 (bruto) |
+|-----------------|------------------------|
+| `rd`            | **0.985**              |
+| `plus_b`        | -0.161                 |
+| todas as outras | < 0.05                 |
+
+A causa não é correlação — é escala. A variância bruta de cada feature:
+
+| Feature      | Variância bruta |
+|--------------|-----------------|
+| `rd`         | 9.07            |
+| `strength`   | 6.12            |
+| `uniformity` | 2.22            |
+| `plus_b`     | 1.00            |
+| `uhml`       | 1.45            |
+| `elongation` | 0.63            |
+| `micronaire` | 0.15            |
+| `trash`      | 0.09            |
+
+`rd` tem o maior desvio-padrão (3.0, refletância medida em escala 0–100)
+simplesmente porque a unidade de medida dessa variável produz números
+maiores — não porque ela seja mais informativa que as outras. A matriz de
+covariância mistura escala com correlação, e quando as duas coisas competem,
+**a escala ganha**. PCA sobre covariância bruta não é "PCA errado" — é PCA
+respondendo exatamente à pergunta que foi feita: "qual direção tem mais
+variância em unidades originais", que raramente é a pergunta que você queria
+fazer.
+
+## A correção: padronizar antes de decompor
+
+Dividindo cada feature pelo seu desvio-padrão antes de formar a matriz
+(`standardize=True`), decompõe-se a matriz de **correlação**, não há de
+covariância. Toda feature passa a contribuir em pé de igualdade — a
+diagonal da matriz de correlação é sempre 1, então o traço é sempre $p$ (o
+número de features), e é exatamente por isso que
+`test_standardized_explained_variance_sums_to_number_of_features` funciona
+como invariante puro, sem precisar de oráculo: a soma dos autovalores de
+qualquer matriz de correlação de 8 features é 8, sempre, por construção.
+
+Com a padronização, o PC1 deixa de ser refém de `rd` e passa a ser dominado
+por `uhml` — e ao ver as *cargas* completas (não só a dominante), aparece a
+estrutura real: PC1 concentra `uhml`, `uniformity` e `strength` com sinais
+consistentes — o bloco de **qualidade de fibra** que o gerador do Módulo 0
+plantou deliberadamente correlacionado. PC2 concentra `rd`, `plus_b` e
+`trash` — o bloco de **qualidade de cor**. A separação que o dev.to article
+do `cotton-desk-tasks` já intuía no domínio, aqui sai *de graça* da álgebra
+linear, sem qualquer rótulo de classe ou hipótese prévia — é literalmente o
+que "aprendizado não supervisionado" quer dizer.
+
+## Por que isso importa além deste módulo
+
+Esta não é uma peculiaridade de PCA. **Qualquer método baseado em distância
+ou produto interno** — k-means, KNN, regularização L2, e o próprio gradiente
+descendente quando features têm escalas muito diferentes (Módulo 4) — sofre
+da mesma sensibilidade. É por isso que `StandardScaler` aparece em
+praticamente todo pipeline de ML como primeira etapa, não por costume, mas
+porque a matemática por trás — covariância, distância euclidiana, norma do
+gradiente — trata "grande em valor numérico" como sinônimo de "importante",
+a menos que você normalize antes.
+
+## Validação
+
+`pca_via_covariance` foi validado contra `numpy.linalg.svd` sobre os dados
+brutos: variância explicada bate até $10^{-14}$, os componentes satisfazem
+$\Sigma v = \lambda v$ até $10^{-12}$, e a ortonormalidade dos componentes
+fica em $10^{-14}$ — a mesma precisão que o `qr_algorithm` já entregava no
+ciclo anterior, como esperado, já que PCA aqui não é nada além de uma
+aplicação direta dele.
