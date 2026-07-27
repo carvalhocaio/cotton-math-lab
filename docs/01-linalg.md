@@ -62,7 +62,7 @@ Seja $v = v^* + \varepsilon u$, com $u \perp v^*$ e $\lVert v^* \rVert = 1$. Ent
 
 $$
 R(v) = \frac{v^\top A v}{v^\top v}
-= \frac{\lambda^* + 2\varepsilon\, u^\top A v^* + \varepsilon^2 u^\top A u}
+= \frac{\lambda^* + 2\varepsilon u^\top A v^* + \varepsilon^2 u^\top A u}
        {1 + \varepsilon^2 \lVert u \rVert^2}.
 $$
 
@@ -70,7 +70,7 @@ Como $v^*$ é autovetor, $Av^* = \lambda^* v^*$, e como $u \perp v^*$, o termo
 cruzado se anula exatamente:
 
 $$
-2\varepsilon\, u^\top A v^* = 2\varepsilon \lambda^* (u^\top v^*) = 0.
+2\varepsilon u^\top A v^* = 2\varepsilon \lambda^* (u^\top v^*) = 0.
 $$
 
 Não é uma aproximação — é uma identidade que vale para qualquer $\varepsilon$.
@@ -176,7 +176,7 @@ projeção sobre todas as colunas anteriores de $Q$, e o resultado é
 normalizado.
 
 $$
-v_j = a_j - \sum_{i<j} (q_i^\top a_j)\, q_i, \qquad q_j = \frac{v_j}{\lVert v_j \rVert}
+v_j = a_j - \sum_{i < j} (q_i^\top a_j) q_i, \qquad q_j = \frac{v_j}{\lVert v_j \rVert}
 $$
 
 O problema não é a fórmula — é a aritmética de ponto flutuante. Quando duas
