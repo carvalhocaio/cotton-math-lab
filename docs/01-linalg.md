@@ -388,3 +388,105 @@ $\Sigma v = \lambda v$ até $10^{-12}$, e a ortonormalidade dos componentes
 fica em $10^{-14}$ — a mesma precisão que o `qr_algorithm` já entregava no
 ciclo anterior, como esperado, já que PCA aqui não é nada além de uma
 aplicação direta dele.
+
+---
+
+## SVD via Jacobi de um lado
+
+Em vez de formar $X^\top X$ e decompor essa matriz $p \times p$, este método
+opera diretamente sobre as colunas de $X$ ($n \times p$). A cada passo,
+escolhe duas colunas $(a_i, a_j)$ e aplica uma rotação $2\times2$ que zera
+$\langle a_i, a_j\rangle$ **exatamente**, por construção geométrica — não
+por diferença numérica entre quantidades próximas. Repetindo sobre todos os
+pares (uma "varredura") e repetindo varreduras até convergir, as colunas
+ficam mutuamente ortogonais: a norma de cada uma é o valor singular, a
+direção é a coluna de $U$, e a rotação acumulada é $V$.
+
+O ponto que separa este método do anterior: cada produto interno
+$\langle a_i, a_j \rangle$ é recalculado a cada varredura, a partir das
+colunas já parcialmente refinadas — em nenhum momento os $p(p+1)/2$
+produtos internos de $X^\top X$ são todos calculados de uma vez, antes de
+qualquer refinamento acontecer.
+
+## Por que isso importa: o número de condição ao quadrado
+
+Número de condição de uma matriz: $\kappa(X) = \sigma_{\max}(X) /
+\sigma_{\min}(X)$ — o quanto $X$ "estica" o espaço na pior direção
+comparado à melhor. Ele mede o quanto erro de entrada é amplificado na
+saída de qualquer cálculo com $X$.
+
+Os autovalores de $X^\top X$ são $\sigma_i(X)^2$ — é a própria definição de
+valor singular. Logo:
+
+$$
+\kappa(X^\top X) = \frac{\sigma_{\max}(X)^2}{\sigma_{\min}(X)^2} = \kappa(X)^2
+$$
+
+Formar $X^\top X$ eleva explicitamente** o número de condição ao
+quadrado**, antes mesmo de qualquer algoritmo de decomposição entrar em
+cena. Isso não é uma peculiaridade do `qr_algorithm` — aconteceria com
+qualquer eigensolver, por melhor que fosse, porque o problema já está na
+matriz de entrada, não no método que a decompõe.
+
+A consequência em ponto flutuante: double precision carrega
+$\varepsilon \approx 2.2\times10^{-16}$ de precisão relativa por operação
+(cerca de 16 dígitos decimais). O erro esperado ao resolver um problema de
+autovalores por métodos diretos escala com $\kappa \cdot \varepsilon$. Se
+$\kappa(X) \approx 2\times10^{8}$ (o fixture do teste), então
+$\kappa(X^\top X) \approx 4\times10^{16}$ — **maior que $1/\varepsilon$**.
+Isso significa, literalmente, que não sobram dígitos significativos para
+representar o menor autovalor: ele está abaixo do próprio ruído de
+arredondamento da matriz que o contém.
+
+## A prova, com números medidos
+
+Na mesma matriz mal-condicionada ($\kappa(X) \approx 2\times10^8$, três
+colunas quase duplicadas — o tipo de colinearidade que aparece de verdade
+entre features HVI correlacionadas, como `uhml` e `uniformity`,
+amplificada aqui para tornar o efeito visível):
+
+| Rota                                          | Erro relativo no menor componente         |
+|-----------------------------------------------|-------------------------------------------|
+| via covariância ($X^\top X$ + `qr_algorithm`) | **325%** — sinal perdido                  |
+| via SVD (Jacobi, direto em $X$)               | $1.2\times10^{-10}$ — precisão de máquina |
+
+O teste `test_covariance_route_loses_smallest_component_on_ill_conditioned_data`
+prova que a rota via covariância **erra de propósito** nesse regime — não é
+bug a corrigir, é a matemática do $\kappa^2$ se manifestando. E
+`test_agrees_with_covariance_route_when_well_conditioned` prova o outro
+lado: quando $\kappa(X)$ é razoável (como nos dados HVI reais do gerador),
+as duas rotas concordam até $10^{-6}$ — a diferença só aparece, e só
+importa, perto do limite de precisão.
+
+## Uma distinção importante com o trade-off do ciclo anterior
+
+Este não é o mesmo argumento de Gram-Schmidt vs. Householder. Lá, o
+problema era cancelamento catastrófico — subtração de quantidades quase
+iguais amplificando erro de arredondamento a cada passo. Aqui, o problema
+acontece **antes de qualquer subtração**: é a própria formação de
+$X^\top X$ que já eleva $\kappa$ ao quadrado, de uma vez, na primeira
+linha de código. São duas doenças numéricas diferentes com o mesmo
+sintoma — perda de precisão — e vale a pena não confundir as duas quando
+for diagnosticar um problema real: "meu resultado está impreciso" pode ser
+cancelamento catastrófico OU número de condição ao quadrado, e o remédio é
+diferente em cada caso.
+
+## Consequência prática, fora do laboratório
+
+Isso não é curiosidade acadêmica: é por isso que `sklearn.decomposition.PCA`
+usa SVD internamente por padrão, não eigendecomposição da matriz de
+covariância — mesmo sendo matematicamente equivalentes no papel. Qualquer
+dataset real com features correlacionadas (e HVI tem — comprimento e
+uniformidade andam juntos por construção) empurra $\kappa$ para cima, e a
+rota "óbvia" (covariância) é justamente a que degrada primeiro.
+
+## Fechando o capstone do Módulo 1
+
+Três métodos de autovalores (power iteration, deflação, QR), dois métodos
+de decomposição QR (Gram-Schmidt, Householder), dois métodos de PCA
+(covariância, SVD) — seis implementações, três trade-offs, um padrão comum
+emergindo em todos: **a forma "óbvia" de resolver um problema numérico
+é raramente a forma estável**, e a diferença só aparece quando você sabe
+que procurar por ela — em gaps espectrais estreitos, em colunas quase
+colineares, em números de condição altos. É exatamente essa vigilância que
+a Fase 1 pretendia treinar.
