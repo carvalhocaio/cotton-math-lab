@@ -7,3 +7,6 @@ class CottonMathLabError(Exception):
 
 class InvalidSpecError(CottonMathLabError, ValueError):
     """Parâmetros de uma especificação são internamente inconsistentes."""
+
+class LinAlgError(CottonMathLabError):
+    """Falha em operação de álgebra linear."""
