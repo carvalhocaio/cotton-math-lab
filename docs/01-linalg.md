@@ -160,6 +160,76 @@ Em matrizes pequenas, como uma matriz $6 \times 6$, esse efeito é praticamente 
 
 Por esse motivo, a deflação sequencial é raramente utilizada em aplicações de grande porte. Na prática, emprega-se o algoritmo QR, que realiza transformações ortogonais de similaridade preservando simultaneamente toda a estrutura espectral da matriz. Como essas transformações mantêm a ortogonalidade de forma muito mais estável numericamente, o algoritmo QR evita o acúmulo progressivo de erros observado na deflação de Hotelling e produz todos os autovalores e autovetores com alta precisão.
 
-## O que vem a seguir
+---
 
-O próximo passo é estudar a decomposição QR, inicialmente construída por Gram-Schmidt e, posteriormente, pela versão numericamente mais estável baseada em reflexões de Householder. Essa decomposição é a base do algoritmo QR, que substitui a deflação sequencial e se tornou o método padrão para o cálculo de autovalores em matrizes densas.
+## Decomposição QR: Gram-Schmidt vs. Householder
+
+Toda matriz $A \in \mathbb{R}^{m\times n}$ ($m \geq n$, colunas linearmente
+independentes) se decompõe como $A = QR$, com $Q$ de colunas ortonormais e
+$R$ triangular superior. Os dois métodos abaixo chegam no mesmo resultado
+teórico por caminhos numericamente muito diferentes.
+
+### Gram-Schmidt clássico
+
+Constrói $Q$ coluna a coluna: a $j$-ésima coluna de $A$ tem removida sua
+projeção sobre todas as colunas anteriores de $Q$, e o resultado é
+normalizado.
+
+$$
+v_j = a_j - \sum_{i<j} (q_i^\top a_j)\, q_i, \qquad q_j = \frac{v_j}{\lVert v_j \rVert}
+$$
+
+O problema não é a fórmula — é a aritmética de ponto flutuante. Quando duas
+colunas de $A$ são quase paralelas, $v_j$ é uma **diferença entre duas
+quantidades quase iguais** ($a_j$ e sua projeção). Esse tipo de subtração é o
+caso clássico de *cancelamento catastrófico*: os dígitos significativos que
+sobram depois da subtração vêm majoritariamente do erro de arredondamento de
+cada termo, não do sinal real. O erro de uma projeção contamina a próxima
+coluna, que contamina a seguinte — e a ortogonalidade de $Q$ degrada de forma
+acumulativa e silenciosa, sem que a fatoração pareça "quebrada": $QR$ ainda
+reconstrói $A$ com precisão de máquina, só $Q$ deixa de ser ortogonal de
+verdade.
+
+O fixture do teste torna isso concreto: com três colunas quase paralelas
+(diferença de $10^{-7}$ entre elas), o erro de ortogonalidade de $Q$ salta de
+precisão de máquina para $\approx 1.9\times10^{-2}$ — quatro ordens de
+grandeza de degradação, e a matriz de teste nem é patologicamente extrema.
+
+### Reflexões de Householder
+
+Em vez de projetar e subtrair, cada passo aplica uma **reflexão ortogonal**
+$H = I - 2vv^\top$ (com $\lVert v \rVert = 1$) escolhida para zerar tudo
+abaixo da diagonal na coluna atual.
+
+A diferença estrutural é o que importa: uma reflexão de Householder é uma
+**isometria exata por construção** — preserva norma e ângulo entre quaisquer
+vetores, não como resultado de uma conta bem-sucedida, mas porque
+$H^\top H = I$ é uma identidade algébrica, verdadeira a cada passo
+independentemente de quão mal-condicionada a matriz de entrada seja. Não há
+subtração de quantidades quase iguais escondida no processo — o cancelamento
+catastrófico simplesmente não tem onde acontecer.
+
+O mesmo fixture prova isso: erro de ortogonalidade $\approx 1.4\times10^{-15}$,
+precisão de máquina, na mesma matriz onde o Gram-Schmidt clássico falhou.
+
+### O padrão que já apareceu antes
+
+Esta é a mesma estrutura de trade-off da deflação de Hotelling, e vale
+nomear o padrão geral: **métodos que operam por diferenças sucessivas (GS,
+deflação) acumulam erro de arredondamento a cada passo; métodos que operam
+por transformações exatamente ortogonais a cada passo (Householder, e o
+algoritmo QR que segue) não acumulam, porque cada passo é uma
+isometria por definição, não por sorte numérica.**
+
+Isso não é coincidência de dois exemplos — é o critério de estabilidade
+numérica que separa "método didático" de "método de produção" em quase toda
+álgebra linear numérica: prefira transformações ortogonais as projeções
+sempre que a estabilidade importar mais que a simplicidade da fórmula.
+
+### Consequência prática
+
+Isso é também por que o algoritmo QR para autovalores (próximo ciclo)
+substitui a deflação de Hotelling: ele usa exatamente estas reflexões de
+Householder para reduzir a matriz e depois itera $A_{k+1} = R_k Q_k$
+(fatoração e produto na ordem trocada) sem nunca acumular o erro que a
+deflação sequencial carrega.
