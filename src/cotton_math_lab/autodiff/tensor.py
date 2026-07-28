@@ -97,8 +97,21 @@ class Tensor:
     def __rtruediv__(self, other):
         return Tensor(other) * self**-1.0
 
-    def backward(self):
-        """Propaga gradientes deste nó até todas as folhas do grafo."""
+    def zero_grad(self) -> None:
+        """Zera o gradiente acumulado — necessário entre passadas de backward
+        que compartilham os mesmos Tensores de entrada (ex: cada linha de
+        um Jacobiano), senão o gradiente da próxima passada soma em cima
+        do resíduo da anterior."""
+        self.grad = np.zeros_like(self.data)
+
+    def backward(self, grad: np.ndarray | None = None) -> None:
+        """Propaga gradientes deste nó até todas as folhas do grafo.
+
+        `grad` semeia o gradiente do nó raiz: por padrão, `ones_like` (a
+        convenção para saída escalar, onde d(saída)/d(saída) = 1). Para
+        Jacobianos, cada linha semeia um vetor one-hot diferente — é assim
+        que se extrai "a derivada de só esta saída" de um nó vetorial.
+        """
         topo: list[Tensor] = []
         visited: set[int] = set()
 
@@ -111,7 +124,11 @@ class Tensor:
 
         build(self)
 
-        self.grad = np.ones_like(self.data)
+        self.grad = (
+            np.ones_like(self.data)
+            if grad is None
+            else np.asarray(grad, dtype=np.float64)
+        )
         for node in reversed(topo):
             node._backward()
 
