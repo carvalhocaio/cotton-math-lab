@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from cotton_math_lab.exceptions import AutodiffError
+
 
 class Tensor:
     """Nó de um grafo computacional com diferenciação automática reversa.
@@ -60,6 +62,40 @@ class Tensor:
 
     def __rsub__(self, other):
         return Tensor(other) + (-self)
+
+    def __pow__(self, exponent):
+        if not isinstance(exponent, (int, float)):
+            raise AutodiffError(
+                "expoente deve ser escalar (int ou float), não outro Tensor "
+                "- derivada de x**y em relação a y exigiria log(x), fora "
+                "do escopo deste motor mínimo"
+            )
+        out = Tensor(self.data**exponent, (self,), f"**{exponent}")
+
+        def _backward():
+            # d(x^n)/dx = n·x^(n-1) — regra do tombo.
+            self.grad = self.grad + (exponent * self.data ** (exponent - 1)) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def exp(self):
+        exponentiated = np.exp(self.data)
+        out = Tensor(exponentiated, (self,), "exp")
+
+        def _backward():
+            # d(exp(x))/dx = exp(x) — a própria função é a sua derivada.
+            self.grad = self.grad + exponentiated * out.grad
+
+        out._backward = _backward
+        return out
+
+    def __truediv__(self, other):
+        other = other if isinstance(other, Tensor) else Tensor(other)
+        return self * other**-1.0
+
+    def __rtruediv__(self, other):
+        return Tensor(other) * self**-1.0
 
     def backward(self):
         """Propaga gradientes deste nó até todas as folhas do grafo."""

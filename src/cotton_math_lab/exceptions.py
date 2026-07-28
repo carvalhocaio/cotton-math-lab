@@ -11,3 +11,7 @@ class InvalidSpecError(CottonMathLabError, ValueError):
 
 class LinAlgError(CottonMathLabError):
     """Falha em operação de álgebra linear."""
+
+
+class AutodiffError(CottonMathLabError):
+    """Uso inválido do grafo de diferenciação automática."""
