@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
-from triton.language import standard
 
 from cotton_math_lab.data.hvi import default_spec, generate_bales
 
 N_LARGE = 20_000
 SEED = 2024
 Z_TOL = 4.0  # ~1 em 16 mil por feature; margem medida foi 2.6
+
 
 @pytest.mark.unit
 def test_generates_requested_number_of_bales():

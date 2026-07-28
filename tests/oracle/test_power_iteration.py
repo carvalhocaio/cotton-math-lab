@@ -40,7 +40,7 @@ def test_eigenvector_is_unit_norm():
 @pytest.mark.unit
 def test_converges_faster_with_larger_spectral_gap():
     """Convergência é geométrica na razão |λ₂/λ₁|: gap maior, menos iterações."""
-    wide = np.diag([10.0, 1.0, 0.5])    # razão 0.1
+    wide = np.diag([10.0, 1.0, 0.5])  # razão 0.1
     narrow = np.diag([10.0, 9.0, 0.5])  # razão 0.9
 
     _, _, iters_wide = power_iteration(wide, seed=0, return_iters=True)

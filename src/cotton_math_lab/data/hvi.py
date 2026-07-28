@@ -11,15 +11,16 @@ import numpy as np
 from cotton_math_lab.exceptions import InvalidSpecError
 
 FEATURES: tuple[str, ...] = (
-    "micronaire",   # índice de finura/maturidade
-    "uhml",         # comprimento (mm)
-    "uniformity",   # índice de uniformidade (%)
-    "strength",     # resistência (g/tex)
-    "elongation",   # elongação (%)
-    "rd",           # refletância (grau de brancura)
-    "plus_b",       # amarelamento
-    "trash",        # área de impurezas (%)
+    "micronaire",  # índice de finura/maturidade
+    "uhml",  # comprimento (mm)
+    "uniformity",  # índice de uniformidade (%)
+    "strength",  # resistência (g/tex)
+    "elongation",  # elongação (%)
+    "rd",  # refletância (grau de brancura)
+    "plus_b",  # amarelamento
+    "trash",  # área de impurezas (%)
 )
+
 
 @dataclass(frozen=True, eq=False)
 class HVISpec:
@@ -83,6 +84,7 @@ def _build_correlation(pairs: dict[tuple[str, str], float]) -> np.ndarray:
         corr[idx[a], idx[b]] = value
         corr[idx[b], idx[a]] = value
     return corr
+
 
 def default_spec() -> HVISpec:
     """Spec com valores típicos de algodão upland brasileiro."""

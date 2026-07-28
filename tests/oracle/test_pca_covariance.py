@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-
 from cotton_math_lab.data.hvi import default_spec, generate_bales
 from cotton_math_lab.linalg.pca import pca_via_covariance
 

@@ -32,7 +32,7 @@ def power_iteration(
     vector /= np.linalg.norm(vector)
 
     eigenvalue = 0.0
-    for iteration in range(1, max_iter + 1):
+    for iteration in range(1, max_iter + 1):  # noqa: B007
         product = matrix @ vector
         vector = product / np.linalg.norm(product)
 
@@ -73,14 +73,13 @@ def eigen_spectrum(
     eigenvectors = np.empty((rows, n_components))
 
     for i in range(n_components):
-        value, vector = power_iteration(
-            residual, seed=seed, max_iter=max_iter, tol=tol
-        )
+        value, vector = power_iteration(residual, seed=seed, max_iter=max_iter, tol=tol)
         eigenvalues[i] = value
         eigenvectors[:, i] = vector
         residual = residual - value * np.outer(vector, vector)
 
     return eigenvalues, eigenvectors
+
 
 def qr_algorithm(
     matrix: np.ndarray,
@@ -105,7 +104,7 @@ def qr_algorithm(
     current = matrix.astype(np.float64).copy()
     accumulated_q = np.eye(n)
 
-    for iteration in range(1, max_iter + 1):
+    for iteration in range(1, max_iter + 1):  # noqa: B007
         q, r = qr_householder(current)
         current = r @ q
         accumulated_q = accumulated_q @ q

@@ -7,10 +7,10 @@ from cotton_math_lab.linalg.svd import svd_jacobi_one_sided
 
 
 def pca_via_covariance(
-        matrix: np.ndarray,
-        *,
-        k: int | None = None,
-        standardize: bool = False,
+    matrix: np.ndarray,
+    *,
+    k: int | None = None,
+    standardize: bool = False,
 ):
     """PCA decompondo a matriz de covariância com o `qr_algorithm`.
 

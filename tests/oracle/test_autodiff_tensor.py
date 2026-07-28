@@ -52,7 +52,10 @@ def test_composite_expression_matches_torch():
 
 @pytest.mark.oracle
 def test_reused_variable_accumulates_gradient():
-    """y = x*x + x — x aparece em dois caminhos; o gradiente deve SOMAR, não sobrescrever."""
+    """y = x*x + x — x aparece em dois caminhos.
+
+    O gradiente deve SOMAR, não sobrescrever.
+    """
     x = Tensor(3.0)
     y = x * x + x
     y.backward()

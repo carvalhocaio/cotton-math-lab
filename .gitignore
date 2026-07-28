@@ -11,3 +11,5 @@ wheels/
 
 # Others
 .idea
+.pytest_cache
+.ruff_cache
