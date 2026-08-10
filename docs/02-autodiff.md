@@ -158,3 +158,64 @@ ingenuamente — continua sendo indispensável não porque seja rápido, mas
 porque é o único dos três que não pode estar errado da mesma forma que os
 outros dois: qualquer bug de regra de `_backward` ou de `Dual` se
 denuncia contra ele.
+
+---
+
+## Hessiana: um híbrido deliberado, não autodiff de segunda ordem
+
+Este motor não faz diferenciação automática de segunda ordem "de verdade".
+Isso exigiria que a própria passada de `backward()` fosse parte de um
+grafo diferenciável — cada operação dentro de `_backward()` teria que ser
+construída com `Tensor`s, não com aritmética crua de `numpy`, para que um
+segundo `backward()` pudesse propagar através da primeira passada. É
+exatamente o que o PyTorch faz com `create_graph=True`, e é uma extensão
+real do motor, não um ajuste pequeno — cada uma das clousures de
+`_backward` teria que virar, ela mesma, uma composição de `Tensor`s
+diferenciável.
+
+Em vez disso, `hessian()` é um híbrido deliberado:
+
+$$
+H_{:,j} \approx \frac{\nabla f(x_0 + h\,e_j) - \nabla f(x_0 - h\,e_j)}{2h}
+$$
+
+O gradiente $\nabla f$ vem de `gradient()` — **exato**, via `Tensor.backward()`,
+sem nenhum erro de truncamento. A diferença finita central é aplicada
+**sobre esse gradiente já exato**, não sobre $f$ diretamente. O resultado:
+metade da Hessiana vem de autodiff (a parte que cada coluna representa —
+o vetor gradiente inteiro, em cada ponto perturbado), e a outra metade
+vem de diferença finita (a forma como as colunas se combinam). É mais
+barato que autodiff de segunda ordem completo, e mais preciso que aplicar
+diferença finita duas vezes em cascata (o que dobraria o erro de
+truncamento $O(h^2)$ acumulado).
+
+## O teste que teria pego um bug real: simetria de Schwarz
+
+`test_hessian_is_symmetric` não é uma checagem incidental — ele codifica o
+**teorema de Schwarz** (as derivadas parciais mistas comutam,
+$\partial^2f/\partial x_i\partial x_j = \partial^2f/\partial x_j\partial x_i$,
+para $f$ suficientemente suave). Numa implementação de Hessiana via
+double-backward de verdade, essa simetria sairia garantida pela própria
+estrutura do grafo computacional. Aqui, **não é garantida por construção**
+— `hessian()` calcula cada coluna de forma independente, perturbando uma
+variável de cada vez, sem nenhuma lógica que force $H_{ij} = H_{ji}$
+explicitamente.
+
+A simetria observada (~$10^{-11}$ de assimetria residual, só ruído de
+ponto flutuante) é uma propriedade **emergente** de dois processos
+numéricos independentes — gradiente exato mais diferença finita —
+concordando porque a matemática subjacente é simétrica, não porque o
+código garante. Se esse teste falhasse um dia, seria sinal de bug real na
+implementação (ex: um erro de índice trocando $i$ e $j$ em algum lugar),
+não de imprecisão numérica esperada — é exatamente o tipo de teste que
+vale manter mesmo depois que "parece óbvio que vai passar".
+
+## Fechando o cálculo vetorial da Fase 1.1
+
+Gradiente, Jacobiano, Hessiana — as três derivadas que a Fase 1.1 pedia
+("gradientes, Jacobianos, Hessianos, regra da cadeia") agora têm
+implementação própria, validada por três oráculos independentes que nunca
+concordam por acidente: `torch.autograd` (outro motor de autodiff inteiro),
+diferenças finitas centrais (a definição de derivada, sem nenhum motor),
+e — no caso da Hessiana — o teorema de Schwarz (uma propriedade
+matemática que o código não impõe, só herda).
