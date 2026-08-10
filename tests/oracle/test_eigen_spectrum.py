@@ -52,3 +52,13 @@ def test_partial_spectrum_returns_only_k_components():
     eigenvalues, vectors = eigen_spectrum(matrix, k=2, seed=0)
     assert eigenvalues.shape == (2,)
     assert vectors.shape == (6, 2)
+
+
+@pytest.mark.unit
+def test_raises_on_non_symmetric_matrix():
+    from cotton_math_lab.exceptions import LinAlgError
+
+    rng = np.random.default_rng(1)
+    matrix = rng.standard_normal((4, 4))
+    with pytest.raises(LinAlgError, match="simétrica"):
+        eigen_spectrum(matrix, seed=0)

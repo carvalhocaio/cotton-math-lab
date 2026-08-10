@@ -55,3 +55,13 @@ def test_raises_on_non_square_matrix():
 
     with pytest.raises(LinAlgError, match="quadrada"):
         power_iteration(np.ones((3, 4)), seed=0)
+
+
+@pytest.mark.unit
+def test_raises_on_non_symmetric_matrix():
+    from cotton_math_lab.exceptions import LinAlgError
+
+    rng = np.random.default_rng(0)
+    matrix = rng.standard_normal((4, 4))  # não simétrica de propósito
+    with pytest.raises(LinAlgError, match="simétrica"):
+        power_iteration(matrix, seed=0)

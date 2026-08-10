@@ -27,6 +27,12 @@ def power_iteration(
     if rows != cols:
         raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
 
+    if not np.allclose(matrix, matrix.T, atol=1e-10):
+        raise LinAlgError(
+            "matriz deve ser simétrica — o quociente de Rayleigh só garante "
+            "autovalor real e convergência monotônica para matrizes simétricas"
+        )
+
     rng = np.random.default_rng(seed)
     vector = rng.standard_normal(rows)
     vector /= np.linalg.norm(vector)
@@ -66,6 +72,12 @@ def eigen_spectrum(
     if rows != cols:
         raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
 
+    if not np.allclose(matrix, matrix.T, atol=1e-10):
+        raise LinAlgError(
+            "matriz deve ser simétrica — a deflação de Hotelling depende da "
+            "ortogonalidade de autovetores, que só vale nesse caso"
+        )
+
     n_components = rows if k is None else k
     residual = matrix.astype(np.float64).copy()
 
@@ -100,7 +112,16 @@ def qr_algorithm(
     mecanismo da power iteration, porque o QR algorithm é, estruturalmente,
     iteração de subespaço simultânea. Gaps estreitos convergem devagar.
     """
-    n = matrix.shape[0]
+    rows, cols = matrix.shape
+    if rows != cols:
+        raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
+    if not np.allclose(matrix, matrix.T, atol=1e-10):
+        raise LinAlgError(
+            "matriz deve ser simétrica — sem isso, autovalores complexos "
+            "aparecem como blocos 2×2 na diagonal e a leitura de np.diag(current) "
+            "não corresponde ao espectro real da matriz"
+        )
+    n = rows
     current = matrix.astype(np.float64).copy()
     accumulated_q = np.eye(n)
 

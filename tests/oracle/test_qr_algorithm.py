@@ -60,3 +60,21 @@ def test_narrow_spectral_gap_needs_far_more_iterations():
     _, _, iters_narrow = qr_algorithm(narrow, return_iters=True, max_iter=3000)
 
     assert iters_wide < iters_narrow
+
+
+@pytest.mark.unit
+def test_raises_on_non_symmetric_matrix():
+    from cotton_math_lab.exceptions import LinAlgError
+
+    rng = np.random.default_rng(2)
+    matrix = rng.standard_normal((4, 4))
+    with pytest.raises(LinAlgError, match="simétrica"):
+        qr_algorithm(matrix)
+
+
+@pytest.mark.unit
+def test_raises_on_non_square_matrix():
+    from cotton_math_lab.exceptions import LinAlgError
+
+    with pytest.raises(LinAlgError, match="quadrada"):
+        qr_algorithm(np.ones((3, 4)))
