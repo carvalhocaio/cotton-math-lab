@@ -85,6 +85,24 @@ def test_elementwise_array_gradient_matches_torch():
     np.testing.assert_allclose(b.grad, tb.grad.numpy())
 
 
+@pytest.mark.oracle
+def test_sum_gradient_matches_torch():
+    rng = np.random.default_rng(0)
+    w_np = rng.standard_normal(8)
+    x_np = rng.standard_normal(8)
+
+    w = Tensor(w_np.copy())
+    z = (w * Tensor(x_np)).sum() + Tensor(0.5)
+    z.backward()
+
+    tw = torch.tensor(w_np, requires_grad=True)
+    tz = (tw * torch.tensor(x_np)).sum() + 0.5
+    tz.backward()
+
+    assert z.data == pytest.approx(tz.item())
+    np.testing.assert_allclose(w.grad, tw.grad.numpy())
+
+
 @pytest.mark.unit
 def test_root_gradient_is_one():
     """dy/dy = 1, sempre — é o valor de partida que a regra da cadeia propaga."""

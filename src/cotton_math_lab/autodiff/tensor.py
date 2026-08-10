@@ -144,3 +144,14 @@ class Tensor:
 
         out._backward = _backward
         return out
+
+    def sum(self):
+        out = Tensor(np.sum(self.data), (self,), "sum")
+
+        def _backward():
+            # d(sum(x))/dxᵢ = 1 para todo i — o gradiente se espalha igual
+            # de volta pra cada elemento que entrou na soma.
+            self.grad = self.grad + np.ones_like(self.data) * out.grad
+
+        out._backward = _backward
+        return out
