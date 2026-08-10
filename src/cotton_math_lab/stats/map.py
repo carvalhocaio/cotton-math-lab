@@ -9,7 +9,8 @@ def map_normal_mean(
     prior_mean: float,
     prior_std: float,
 ) -> float:
-    """MAP de μ para dados ~ Normal(μ, σ²) com σ CONHECIDO, prior μ ~ Normal(prior_mean, prior_std²).
+    """MAP de μ para dados ~ Normal(μ, σ²) com σ CONHECIDO, prior
+    μ ~ Normal(prior_mean, prior_std²).
 
     Conjugado Normal-Normal: a posterior de μ também é Normal, e sua média
     (que coincide com a moda — a posterior é simétrica) é uma média

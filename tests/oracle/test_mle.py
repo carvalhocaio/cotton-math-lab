@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
-from cotton_math_lab.stats.mle import mle_normal
 from scipy import stats
 
 from cotton_math_lab.autodiff.optim import SGD
 from cotton_math_lab.autodiff.tensor import Tensor
+from cotton_math_lab.stats.mle import mle_normal
 
 SEED = 2024
 TRUE_MU, TRUE_SIGMA = 4.3, 0.4
