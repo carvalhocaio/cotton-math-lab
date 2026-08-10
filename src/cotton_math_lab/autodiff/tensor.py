@@ -134,3 +134,13 @@ class Tensor:
 
     def __repr__(self) -> str:
         return f"Tensor(data={self.data}, grad={self.grad})"
+
+    def log(self):
+        out = Tensor(np.log(self.data), (self,), "log")
+
+        def _backward():
+            # d(log(x))/dx = 1/x
+            self.grad = self.grad + (1.0 / self.data) * out.grad
+
+        out._backward = _backward
+        return out

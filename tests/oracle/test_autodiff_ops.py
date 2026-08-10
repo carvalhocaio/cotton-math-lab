@@ -78,3 +78,46 @@ def test_pow_rejects_non_scalar_exponent():
     x = Tensor(2.0)
     with pytest.raises(AutodiffError, match="escalar"):
         x ** Tensor(2.0)
+
+
+@pytest.mark.oracle
+def test_log_gradient_matches_torch():
+    x = Tensor(2.5)
+    y = x.log()
+    y.backward()
+
+    tx = torch.tensor(2.5, requires_grad=True)
+    torch.log(tx).backward()
+
+    assert x.grad == pytest.approx(tx.grad.item())
+
+
+@pytest.mark.oracle
+def test_sigmoid_cross_entropy_composition_matches_torch():
+    """Sigmoide não é primitiva — é 1/(1+exp(-z)), pura composição.
+    Cross-entropy binária usa log em cascata com ela. Cobre os dois rótulos,
+    porque cada um exercita um ramo diferente da soma (y·log(p) vs (1-y)·log(1-p))."""
+
+    def sigmoid(t):
+        return 1.0 / (1.0 + (-t).exp())
+
+    def bce_loss(weight, x_input, bias, y_true):
+        z = weight * x_input + bias
+        p = sigmoid(z)
+        return -(y_true * p.log() + (1 - y_true) * (1.0 - p).log())
+
+    for y_true in (1.0, 0.0):
+        w, b = Tensor(0.8), Tensor(-0.2)
+        loss = bce_loss(w, Tensor(1.3), b, y_true)
+        loss.backward()
+
+        tw = torch.tensor(0.8, requires_grad=True)
+        tb = torch.tensor(-0.2, requires_grad=True)
+        tz = tw * 1.3 + tb
+        tp = torch.sigmoid(tz)
+        tloss = -(y_true * torch.log(tp) + (1 - y_true) * torch.log(1 - tp))
+        tloss.backward()
+
+        assert loss.data == pytest.approx(tloss.item())
+        assert w.grad == pytest.approx(tw.grad.item())
+        assert b.grad == pytest.approx(tb.grad.item())
