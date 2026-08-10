@@ -219,3 +219,51 @@ concordam por acidente: `torch.autograd` (outro motor de autodiff inteiro),
 diferenças finitas centrais (a definição de derivada, sem nenhum motor),
 e — no caso da Hessiana — o teorema de Schwarz (uma propriedade
 matemática que o código não impõe, só herda).
+
+---
+
+## O capstone: regressão logística, do zero, contra o sklearn
+
+Última peça do motor: `sum()`, a redução que faltava pra fazer produto
+escalar entre um vetor de pesos e um vetor de features —
+$z = \sum_i w_i x_i + b$ — sem ela, não havia como colapsar oito
+contribuições numa saída escalar única. Como toda peça deste módulo, o
+gradiente de `sum()` é simples e mecânico: $\partial(\sum_i x_i)/\partial
+x_i = 1$ para todo $i$, o gradiente de saída se espalha igual de volta
+pra cada elemento que entrou na soma.
+
+Com `sum()`, `log()`, `exp()` e `SGD`, a regressão logística inteira —
+sigmoide, perda de entropia cruzada, laço de treino — é construída por
+composição, sem nenhuma primitiva nova. `sigmoid(z) = 1/(1+exp(-z))` e a
+perda usam só o que já existia. Esse é o argumento de composicionalidade
+do módulo levado até o fim: seis primitivas (`+`, `*`, `pow`, `exp`,
+`log`, `sum`) bastam pra treinar um classificador de verdade.
+
+### O teste que prova que o motor funciona, não só que compila
+
+Treinado nos dados HVI reais do Módulo 0 — 180 fardos de treino, rótulo
+sintético "premium" via combinação linear de resistência, uniformidade,
+comprimento e impureza mais ruído gaussiano (um limiar linear com
+sobreposição de classes real, não um problema trivialmente separável) —
+o modelo bateu **exatamente** a acurácia de teste do
+`sklearn.linear_model.LogisticRegression` no mesmo split (0.7143 nos
+dois), e os pesos aprendidos ficaram próximos coeficiente a coeficiente:
+
+| Feature | Nosso peso | Peso do sklearn |
+|---|---|---|
+| strength | 0.779 | 0.895 |
+| uniformity | 0.647 | 0.699 |
+| uhml | 0.633 | 0.608 |
+| trash | -0.665 | -0.752 |
+
+As pequenas diferenças vêm do otimizador: nosso SGD puro, full-batch, 120
+passos; o `sklearn` usa L-BFGS com regularização L2 leve por padrão — dois
+caminhos de otimização diferentes convergindo pra perto do mesmo mínimo,
+porque o problema é bem-condicionado o suficiente pra isso importar pouco.
+
+Isso fecha o argumento central do módulo inteiro: um motor de ~200 linhas,
+validado peça por peça contra `torch`, diferenças finitas centrais, e
+propriedades matemáticas (Schwarz, teorema de Rayleigh), compõe um sistema
+que treina um modelo real e generaliza tão bem quanto uma biblioteca de
+produção — não por coincidência, mas porque cada peça foi provada correta
+antes de compor a próxima.
