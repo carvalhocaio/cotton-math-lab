@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import torch
-from cotton_math_lab.autodiff.jacobian import jacobian
 
+from cotton_math_lab.autodiff.jacobian import jacobian
 from cotton_math_lab.autodiff.tensor import Tensor
 
 
