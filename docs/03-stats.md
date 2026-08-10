@@ -100,6 +100,64 @@ mais útil quanto menos dados houver.
 
 ---
 
+## Beta-Binomial: o par natural do Normal-Normal, para dados binários
+
+Mesma lógica do MAP normal — combinar prior e dados —, mas pra uma
+proporção em vez de uma média contínua. Prior $p \sim \text{Beta}(\alpha,
+\beta)$, observação: $k$ fardos fora de especificação em $n$ inspecionados,
+$\sim \text{Binomial}(n, p)$. A posterior é exata, sem nenhuma aproximação:
+
+$$
+p \mid k, n \;\sim\; \text{Beta}(\alpha + k,\; \beta + n - k)
+$$
+
+Diferente do Normal-Normal do ciclo anterior — que só é exato se $\sigma$
+for conhecido —, Beta-Binomial é conjugado **incondicionalmente**: não há
+nenhum parâmetro extra que precise ser assumido fixo pra conjugação
+funcionar.
+
+### Validação
+
+Contra busca em grade (prior × verossimilhança binomial, integrada
+numericamente numa grade de 50 mil pontos): diferença $0.0$ no cenário
+testado (6 fora de spec em 40 inspecionados). Contra `scipy.stats.beta`:
+exato. E os dois limites de sempre se confirmam: prior quase-flat
+($\alpha,\beta \to 0$) faz a média posterior convergir pro MLE $k/n$; um
+prior concentrado ($\alpha+\beta$ grande) com poucos dados observados
+($n=3$) puxa a média posterior de volta pra perto da média do prior,
+resistindo a uma amostra pequena e ruidosa.
+
+### A propriedade que importa mais que a fórmula: atualização sequencial
+
+Atualizar a posterior em dois lotes — primeiro com 4 sucessos em 20
+ensaios, depois com 2 em 20 — dá **exatamente** a mesma posterior que
+atualizar de uma vez com os 6 em 40 combinados. Não é aproximadamente
+igual: os parâmetros batem bit a bit.
+
+Isso não é uma curiosidade de implementação — é a propriedade que torna
+inferência bayesiana genuinamente **incremental**. A posterior da semana
+passada *é* o prior desta semana. Você pode atualizar a crença sobre a
+proporção de fardos fora de especificação a cada novo lote inspecionado,
+sem nunca precisar reprocessar o histórico inteiro, e o resultado final
+não depende de ter processado tudo de uma vez ou em cinquenta pedaços ao
+longo de cinquenta semanas. Um sistema de MLE puro, recalculado do zero a
+cada lote, não tem essa propriedade de graça — cada recálculo é
+independente do anterior, e "lembrar" exige guardar todo o histórico bruto,
+não só dois números ($\alpha$, $\beta$).
+
+### Conectando os dois conjugados do módulo
+
+Normal-Normal e Beta-Binomial resolvem o mesmo problema estrutural —
+combinar uma crença prévia com evidência nova, ponderando pela confiança
+relativa de cada uma — em dois domínios diferentes: um contínuo (a média de
+uma distribuição normal), outro discreto (uma proporção). A forma de
+combinar difere (média ponderada por precisão vs. soma de contagens), mas
+a lógica é idêntica, e é a mesma lógica que aparece de novo, disfarçada de
+"regularização" ou "suavização de Laplace", em praticamente todo canto do
+aprendizado de máquina.
+
+---
+
 ## Fio condutor do módulo até aqui
 
 MLE responde "que parâmetro torna os dados observados mais prováveis,
