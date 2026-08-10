@@ -130,3 +130,32 @@ def generate_bales(spec: HVISpec, n: int, seed: int) -> np.ndarray:
     lower = np.linalg.cholesky(spec.covariance)
     standard = rng.standard_normal((n, len(spec.features)))
     return spec.means + standard @ lower.T
+
+
+def generate_quality_labels(
+    bales: np.ndarray,
+    spec: HVISpec,
+    *,
+    seed: int,
+    noise_std: float = 1.0,
+) -> np.ndarray:
+    """Rótulo binário sintético: "fardo premium" via combinação linear de
+    features padronizadas — mais resistência, uniformidade e comprimento;
+    menos impureza — mais ruído gaussiano. Um limiar linear com sobreposição
+    de classes realista (a acurácia teto não é 100%), não um problema
+    trivialmente separável.
+    """
+    idx = {name: i for i, name in enumerate(spec.features)}
+    standardized = (bales - bales.mean(axis=0)) / bales.std(axis=0, ddof=1)
+
+    rng = np.random.default_rng(seed)
+    noise = rng.normal(0.0, noise_std, len(bales))
+
+    score = (
+        0.6 * standardized[:, idx["strength"]]
+        + 0.4 * standardized[:, idx["uniformity"]]
+        + 0.3 * standardized[:, idx["uhml"]]
+        - 0.5 * standardized[:, idx["trash"]]
+        + noise
+    )
+    return (score > 0).astype(np.float64)

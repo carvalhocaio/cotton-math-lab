@@ -68,3 +68,18 @@ def test_recovers_population_correlation():
     z_scores = z_error * np.sqrt(N_LARGE - 3)
 
     assert z_scores.max() < Z_TOL, z_scores.max()
+
+
+@pytest.mark.unit
+def test_quality_labels_are_deterministic_and_balanced():
+    from cotton_math_lab.data.hvi import generate_quality_labels
+
+    spec = default_spec()
+    bales = generate_bales(spec, n=250, seed=2024)
+
+    first = generate_quality_labels(bales, spec, seed=99)
+    second = generate_quality_labels(bales, spec, seed=99)
+    np.testing.assert_array_equal(first, second)
+
+    assert set(np.unique(first)) <= {0.0, 1.0}
+    assert 0.3 < first.mean() < 0.7  # nem trivialmente desbalanceado
