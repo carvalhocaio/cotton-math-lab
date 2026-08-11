@@ -165,3 +165,121 @@ sem nenhuma outra informação". MAP responde a mesma pergunta admitindo
 que você já sabia alguma coisa antes de olhar os dados. Nenhum dos dois é
 "mais certo" — são respostas a perguntas diferentes, e a escolha certa
 depende de quanto dado você tem e quanto confia no que já sabia.
+
+---
+
+## Bootstrap: quando não existe conjugado à mão
+
+Os dois ciclos anteriores dependeram de conjugação exata — Normal-Normal,
+Beta-Binomial. Mas a maioria das estatísticas de interesse não tem
+conjugado nenhum: mediana, correlação, razão de variâncias, o coeficiente
+de uma regressão. Bootstrap resolve isso sem assumir nada sobre a forma da
+estatística.
+
+A ideia inteira em uma frase: reamostrar os dados observados **com
+reposição**, muitas vezes, recalcular a estatística de interesse em cada
+reamostra, e usar os percentis dessa distribuição simulada como intervalo.
+Não há fórmula de erro-padrão nenhuma — a variabilidade amostral é
+estimada empiricamente, tratando a amostra observada como se fosse a
+própria população.
+
+### Validação em duas frentes
+
+Contra `scipy.stats.bootstrap`, com a mesma semente: bate essencialmente
+exato, tanto para a média quanto para a **mediana de uma distribuição
+exponencial** (assimétrica de propósito — sem fórmula fechada simples de
+erro-padrão pra mediana, exatamente o caso em que bootstrap importa).
+
+Mais rigoroso: cobertura empírica medida por repetição do experimento
+inteiro. Um IC bootstrap de 95%, repetido 1000-2000 vezes com amostras
+frescas, capturou a verdade em **93-94%** das vezes — não os 95% exatos.
+Isso não é bug: o método percentil tem viés de sub-cobertura conhecido,
+mais pronunciado em amostras modestas (existe uma correção — *bias-corrected
+and accelerated*, BCa — fora do escopo deste ciclo). O número importa mais
+que a intuição: "parece que devia dar 95%" não é o mesmo que medir que dá.
+
+---
+
+## IC vs. intervalo de credibilidade: a confusão mais comum em estatística
+
+Duas construções que respondem perguntas **diferentes**, mesmo quando o
+número de saída parece o mesmo tipo de coisa (um intervalo, um nível de
+confiança de 95%).
+
+**Intervalo de confiança (Wilson, pra uma proporção)** não usa nenhum
+prior — é a inversão de um teste de hipótese: o conjunto de valores $p_0$
+para os quais um teste de score não seria rejeitado. A garantia é sobre o
+**procedimento**: repetindo o experimento inteiro muitas vezes, 95% dos
+intervalos construídos vão conter o $p$ verdadeiro. Para um único intervalo
+já calculado, $p$ ou está lá dentro ou não está — não há "95% de chance"
+sobre esse intervalo específico, porque no enquadramento frequentista $p$ é
+fixo, não aleatório.
+
+**Intervalo de credibilidade** vem dos quantis da posterior Beta. Aqui $p$
+**é** tratado como variável aleatória (dado os dados observados), e a
+afirmação é direta: "95% de probabilidade posterior de $p$ estar aqui,
+dado esses dados e este prior". A condição extra — "e este prior" — é
+exatamente o que a leitura popular incorreta do IC costuma esquecer.
+
+### A prova, com números medidos
+
+Um único exemplo concreto já mostra a divergência: com $k{=}6$ fora de
+especificação em $n{=}40$ inspecionados, e um prior forte centrado em 0.20
+(fixado **antes** de ver os dados):
+
+| | limite inferior | limite superior |
+|---|---|---|
+| IC (Wilson, 95%) | 0.071 | 0.291 |
+| Credível (prior forte) | 0.145 | 0.244 |
+| Credível (prior fraco) | 0.071 | 0.292 |
+
+O IC não muda nunca, porque não usa prior nenhum. O credível com prior
+forte é visivelmente mais estreito e deslocado — a crença prévia pesou. O
+credível com prior fraco praticamente coincide com o IC: **quando o prior
+não pesa, os dois enquadramentos convergem numericamente**, mesmo
+continuando filosoficamente distintos.
+
+A parte que realmente separa os dois é a **cobertura sob repetição**, com
+a verdade fixada em $p{=}0.15$ e um prior **descasado** (centrado em 0.20,
+fixado antes de qualquer dado):
+
+| Método | Cobertura medida (nominal: 95%) |
+|---|---|
+| IC (Wilson) | 96.3% |
+| Credível, prior descasado | **74.1%** |
+| Credível, prior fraco | 96.3% |
+
+O IC mantém a garantia de 95% **de qualquer jeito** — é uma propriedade da
+construção, não depende de nada estar "certo" sobre $p$. O intervalo de
+credibilidade com um prior errado **não** mantém essa garantia: caiu 21
+pontos percentuais abaixo do nominal. Isso não invalida a leitura
+bayesiana — o intervalo continua correto como afirmação de crença
+posterior, dado aquele prior específico. O que fica provado é que essa
+afirmação de crença **não é a mesma coisa** que a garantia frequentista de
+cobertura repetida, e tratar uma como se fosse a outra é exatamente o erro
+mais comum que existe em como se comunica estatística.
+
+### A régua pra decidir qual usar
+
+Nenhum dos dois é "mais certo" — respondem perguntas diferentes. Use IC
+quando a pergunta é "que garantia esse procedimento tem, sob repetição,
+sem eu precisar assumir nada prévio sobre o parâmetro". Use intervalo de
+credibilidade quando você **tem** uma crença prévia genuína (histórico de
+safras anteriores, conhecimento de domínio sobre a descaroçadora) e quer
+uma afirmação de probabilidade direta sobre o parâmetro, condicionada
+nessa crença — mas então a validade da afirmação depende inteiramente de
+quão razoável foi o prior escolhido, algo que o método em si nunca vai te
+avisar se você errou.
+
+---
+
+## Fechando o Módulo 3
+
+MLE responde "o que os dados sozinhos sugerem". MAP e Beta-Binomial
+respondem a mesma pergunta admitindo uma crença prévia, e mostram
+(com números, não só teoria) que essa crença ajuda mais exatamente quando
+os dados são escassos. Bootstrap dispensa fórmula fechada quando nenhum
+conjugado existe. E IC vs. credível fecha o módulo com o ponto mais
+aplicável de todos: dois números que parecem a mesma coisa podem carregar
+garantias matemáticas completamente diferentes — e a diferença só aparece
+quando alguém mede, não quando alguém assume.
