@@ -155,3 +155,54 @@ class RMSProp:
     def zero_grad(self) -> None:
         for parameter in self.parameters:
             parameter.zero_grad()
+
+
+class Adam:
+    """Combina Momentum (média móvel do gradiente) com RMSProp (média
+    móvel do gradiente ao quadrado), mais correção de viés — necessária
+    porque m₀=v₀=0 enviesa as duas médias em direção a zero nos primeiros
+    passos, e os dois enviesam em proporções DIFERENTES (governadas por
+    β₁ e β₂ respectivamente), então o desequilíbrio entre eles distorce o
+    tamanho do passo se não for corrigido.
+
+    m ← β₁·m + (1-β₁)·∇θ
+    v ← β₂·v + (1-β₂)·(∇θ)²
+    m̂ ← m / (1-β₁ᵗ),  v̂ ← v / (1-β₂ᵗ)
+    θ ← θ - lr·m̂ / (√v̂ + ε)
+
+    Em t=1, a correção cancela exatamente o fator de viés introduzido:
+    m̂ = ∇θ e v̂ = (∇θ)², então m̂/√v̂ = sign(∇θ) — o primeiro passo é
+    sempre ±lr, não importa a magnitude do gradiente inicial.
+    """
+
+    def __init__(
+        self,
+        parameters: list[Tensor],
+        lr: float = 0.001,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+    ):
+        self.parameters = parameters
+        self.lr = lr
+        self.beta1, self.beta2 = betas
+        self.eps = eps
+        self.m = [np.zeros_like(p.data) for p in parameters]
+        self.v = [np.zeros_like(p.data) for p in parameters]
+        self.t = 0
+
+    def step(self) -> None:
+        self.t += 1
+        for parameter, m, v in zip(self.parameters, self.m, self.v, strict=True):
+            m[...] = self.beta1 * m + (1 - self.beta1) * parameter.grad
+            v[...] = self.beta2 * v + (1 - self.beta2) * (parameter.grad**2)
+
+            m_hat = m / (1 - self.beta1**self.t)
+            v_hat = v / (1 - self.beta2**self.t)
+
+            parameter.data = parameter.data - self.lr * m_hat / (
+                np.sqrt(v_hat) + self.eps
+            )
+
+    def zero_grad(self) -> None:
+        for parameter in self.parameters:
+            parameter.zero_grad()
