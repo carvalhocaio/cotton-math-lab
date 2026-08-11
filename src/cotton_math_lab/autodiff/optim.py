@@ -108,3 +108,50 @@ class NesterovMomentum:
     def zero_grad(self) -> None:
         for parameter in self.parameters:
             parameter.zero_grad()
+
+
+class RMSProp:
+    """Adapta o tamanho do passo por parâmetro via média móvel do
+    gradiente ao quadrado — muda de eixo em relação a Momentum: em vez de
+    suavizar a DIREÇÃO do passo, reescala sua MAGNITUDE, parâmetro a
+    parâmetro.
+
+    v ← α·v + (1-α)·(∇θ)²
+    θ ← θ - lr·∇θ / (√v + ε)
+
+    Parâmetros com gradiente historicamente grande (alta curvatura, como
+    y na superfície de teste) acumulam v grande e recebem passo efetivo
+    MENOR; parâmetros com gradiente historicamente pequeno recebem passo
+    efetivo MAIOR. O resultado prático: direções de curvatura muito
+    diferente passam a andar em ritmos parecidos, sem precisar caçar um
+    `lr` que funcione simultaneamente para as duas — o problema que
+    Momentum, no ciclo anterior, não resolvia sozinho.
+    """
+
+    def __init__(
+        self,
+        parameters: list[Tensor],
+        lr: float = 0.01,
+        alpha: float = 0.99,
+        eps: float = 1e-8,
+    ):
+        self.parameters = parameters
+        self.lr = lr
+        self.alpha = alpha
+        self.eps = eps
+        self.square_average = [np.zeros_like(p.data) for p in parameters]
+
+    def step(self) -> None:
+        for parameter, square_avg in zip(
+            self.parameters, self.square_average, strict=True
+        ):
+            square_avg[...] = self.alpha * square_avg + (1 - self.alpha) * (
+                parameter.grad**2
+            )
+            parameter.data = parameter.data - self.lr * parameter.grad / (
+                np.sqrt(square_avg) + self.eps
+            )
+
+    def zero_grad(self) -> None:
+        for parameter in self.parameters:
+            parameter.zero_grad()
