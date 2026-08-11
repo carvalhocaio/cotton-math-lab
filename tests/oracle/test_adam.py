@@ -52,8 +52,9 @@ def test_bias_correction_makes_first_step_exactly_lr_sized():
 @pytest.mark.unit
 def test_uncorrected_first_step_is_larger_by_known_factor():
     """O contraponto: SEM correção de viés, o primeiro passo não é ±lr —
-    fica inflado por 1/√(1-β₂) × √(1-β₁), um fator fixo e prevísivel a
-    partir dos betas, não do gradiente."""
+    fica inflado por (1-β₁)/√(1-β₂), um fator fixo e previsível a partir
+    dos betas, não do gradiente. A raiz só se aplica ao lado de v (que já
+    carrega grad²); o lado de m entra sem raiz nenhuma — daí a assimetria."""
     beta1, beta2, lr, eps = 0.9, 0.999, 0.1, 1e-8
     grad = 6.0
 
@@ -61,5 +62,5 @@ def test_uncorrected_first_step_is_larger_by_known_factor():
     v = (1 - beta2) * grad**2
     uncorrected_step = lr * m / (np.sqrt(v) + eps)
 
-    expected_inflation = np.sqrt(1 - beta1) / np.sqrt(1 - beta2)
+    expected_inflation = (1 - beta1) / np.sqrt(1 - beta2)
     assert abs(uncorrected_step) == pytest.approx(lr * expected_inflation, rel=1e-3)
