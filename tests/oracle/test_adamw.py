@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from cotton_math_lab.autodiff.optim import Adam, AdamW
+from cotton_math_lab.autodiff.optim import AdamW
 from cotton_math_lab.autodiff.tensor import Tensor
 
 
