@@ -206,3 +206,49 @@ class Adam:
     def zero_grad(self) -> None:
         for parameter in self.parameters:
             parameter.zero_grad()
+
+
+class AdamW(Adam):
+    """Adam com weight decay DESACOPLADO — não é 'Adam + L2 no gradiente'.
+
+    θ ← θ - lr·(m̂/(√v̂+ε) + weight_decay·θ)
+
+    A diferença é onde o termo de decaimento entra. Somar weight_decay·θ
+    ao GRADIENTE (a forma ingênua) faz esse termo virar parte de m e v —
+    e por isso fica reescalado pela adaptação por parâmetro do Adam
+    (1/√v̂). Parâmetros com histórico de gradiente grande (v grande)
+    acabam recebendo MENOS decaimento efetivo; parâmetros com histórico
+    pequeno recebem MAIS — a força de regularização passa a depender do
+    histórico de treino de cada parâmetro, não só do `weight_decay` que
+    você escolheu.
+
+    Aqui, o termo `weight_decay·θ` é somado DEPOIS da divisão por √v̂ — nunca
+    entra nas médias móveis, nunca é reescalado pela adaptação. A mesma
+    fração nominal de decaimento se aplica igual a todo parâmetro,
+    independente do quanto ele já se moveu.
+    """
+
+    def __init__(
+        self,
+        parameters: list[Tensor],
+        lr: float = 0.001,
+        betas: tuple[float, float] = (0.9, 0.999),
+        eps: float = 1e-8,
+        weight_decay: float = 0.01,
+    ):
+        super().__init__(parameters, lr=lr, betas=betas, eps=eps)
+        self.weight_decay = weight_decay
+
+    def step(self) -> None:
+        self.t += 1
+        for parameter, m, v in zip(self.parameters, self.m, self.v, strict=True):
+            m[...] = self.beta1 * m + (1 - self.beta1) * parameter.grad
+            v[...] = self.beta2 * v + (1 - self.beta2) * (parameter.grad**2)
+
+            m_hat = m / (1 - self.beta1**self.t)
+            v_hat = v / (1 - self.beta2**self.t)
+
+            adaptive_update = m_hat / (np.sqrt(v_hat) + self.eps)
+            parameter.data = parameter.data - self.lr * (
+                adaptive_update + self.weight_decay * parameter.data
+            )
