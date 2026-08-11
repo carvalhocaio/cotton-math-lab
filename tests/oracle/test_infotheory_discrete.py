@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
+from scipy.stats import entropy as scipy_entropy
+
 from cotton_math_lab.infotheory.discrete import (
     cross_entropy_discrete,
     entropy_discrete,
     kl_divergence_discrete,
 )
-from scipy.stats import entropy as scipy_entropy
 
 # distribuição de faixas de qualidade de fardos: premium, standard, off-spec
 P = np.array([0.5, 0.35, 0.15])

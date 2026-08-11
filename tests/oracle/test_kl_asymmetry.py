@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
+from scipy import stats
+
 from cotton_math_lab.infotheory.continuous import (
     fit_gaussian_by_forward_kl,
     fit_gaussian_by_reverse_kl,
     kl_divergence_grid,
 )
-from scipy import stats
 
 X_GRID = np.linspace(-10, 10, 4000)
 

@@ -28,8 +28,8 @@ def newton_minimize(
         g = gradient(f, x)
         if np.linalg.norm(g) < tol:
             return x, iteration - 1
-        H = hessian_fn(f, x)
-        x = x - np.linalg.solve(H, g)
+        hessian = hessian_fn(f, x)
+        x = x - np.linalg.solve(hessian, g)
 
     return x, max_iter
 
@@ -53,9 +53,10 @@ def bfgs_minimize(
     g = gradient(f, x)
     iteration = 0
 
-    for iteration in range(1, max_iter + 1):
+    while iteration < max_iter:
         if np.linalg.norm(g) < tol:
             break
+        iteration += 1
 
         direction = -h_inv @ g
 
