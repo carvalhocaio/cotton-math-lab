@@ -68,3 +68,43 @@ class Momentum:
     def zero_grad(self) -> None:
         for parameter in self.parameters:
             parameter.zero_grad()
+
+
+class NesterovMomentum:
+    """Momentum de Nesterov — corrige o gradiente ANTES de aplicar o passo,
+    usando a velocidade que já se acumulou.
+
+    v ← momentum·v + ∇θ
+    θ ← θ - lr·(∇θ + momentum·v)
+
+    A formulação clássica de Nesterov calcula o gradiente numa posição
+    "futura" (θ - lr·momentum·v), avaliando a função ali antes de dar o
+    passo — uma segunda passada forward por iteração. O PyTorch (e esta
+    implementação) usa uma reformulação algébrica equivalente que evita
+    essa segunda avaliação: soma momentum·v ao gradiente ATUAL antes de
+    escalar por lr, chegando no mesmo destino sem o custo extra. Na
+    prática, essa correção antecipada reduz o overshoot que faz o
+    Momentum clássico oscilar em superfícies mal-condicionadas — desloca
+    a fronteira de estabilidade, não é só uma variação cosmética.
+    """
+
+    def __init__(
+        self,
+        parameters: list[Tensor],
+        lr: float = 0.01,
+        momentum: float = 0.9,
+    ):
+        self.parameters = parameters
+        self.lr = lr
+        self.momentum = momentum
+        self.velocity = [np.zeros_like(p.data) for p in parameters]
+
+    def step(self) -> None:
+        for parameter, velocity in zip(self.parameters, self.velocity, strict=True):
+            velocity[...] = self.momentum * velocity + parameter.grad
+            update = parameter.grad + self.momentum * velocity
+            parameter.data = parameter.data - self.lr * update
+
+    def zero_grad(self) -> None:
+        for parameter in self.parameters:
+            parameter.zero_grad()
