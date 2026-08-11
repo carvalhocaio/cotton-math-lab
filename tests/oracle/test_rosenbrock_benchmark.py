@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import torch
-from cotton_math_lab.autodiff.benchmarks import rosenbrock
 
+from cotton_math_lab.autodiff.benchmarks import rosenbrock
 from cotton_math_lab.autodiff.optim import (
     SGD,
     Adam,
