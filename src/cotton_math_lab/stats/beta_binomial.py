@@ -1,21 +1,21 @@
-"""Beta-Binomial conjugado: proporção de fardos fora de especificação."""
+"""Conjugate Beta-Binomial: proportion of bales out of specification."""
 
 
 def beta_binomial_posterior(
     k: int, n: int, alpha_prior: float, beta_prior: float
 ) -> tuple[float, float]:
-    """Parâmetros da posterior, dado prior p ~ Beta(α, β) e k sucessos em
-    n ensaios ~ Binomial(n, p).
+    """Posterior parameters, given prior p ~ Beta(α, β) and k successes
+    in n trials ~ Binomial(n, p).
 
-    Conjugação exata: a posterior é Beta(α+k, β+n-k) — a mesma família do
-    prior, só com os parâmetros deslocados pelos dados observados. Não há
-    aproximação nenhuma aqui, ao contrário do Normal-Normal do ciclo
-    anterior (que também é exato, mas exige σ conhecido); Beta-Binomial é
-    exato incondicionalmente.
+    Exact conjugation: the posterior is Beta(α+k, β+n-k) — the same
+    family as the prior, just with the parameters shifted by the
+    observed data. There's no approximation here at all, unlike the
+    Normal-Normal from the previous cycle (which is also exact, but
+    requires a known σ); Beta-Binomial is unconditionally exact.
     """
     return alpha_prior + k, beta_prior + (n - k)
 
 
 def posterior_mean(alpha: float, beta: float) -> float:
-    """Média da distribuição Beta(α, β) — a estimativa pontual bayesiana."""
+    """Mean of the Beta(α, β) distribution — the Bayesian point estimate."""
     return alpha / (alpha + beta)

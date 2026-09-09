@@ -1,16 +1,16 @@
-"""Decomposição QR: Gram-Schmidt clássico vs. reflexões de Householder."""
+"""QR decomposition: classic Gram-Schmidt vs. Householder reflections."""
 
 import numpy as np
 
 
 def qr_gram_schmidt(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """QR via Gram-Schmidt clássico, coluna a coluna.
+    """QR via classic Gram-Schmidt, column by column.
 
-    Cada coluna de Q é a coluna de `matrix` menos suas projeções sobre as
-    colunas anteriores, normalizada. R acumula os coeficientes das projeções.
-    Numericamente instável quando colunas são quase colineares: erros de
-    arredondamento em uma projeção contaminam a próxima, e Q perde
-    ortogonalidade de forma acumulativa e silenciosa.
+    Each column of Q is the column of `matrix` minus its projections
+    onto the previous columns, normalized. R accumulates the projection
+    coefficients. Numerically unstable when columns are nearly
+    collinear: rounding errors in one projection contaminate the next,
+    and Q loses orthogonality cumulatively and silently.
     """
     rows, cols = matrix.shape
     q = np.zeros((rows, cols))
@@ -28,13 +28,14 @@ def qr_gram_schmidt(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def qr_householder(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """QR via reflexões de Householder.
+    """QR via Householder reflections.
 
-    Cada passo zera, com uma única reflexão ortogonal, tudo abaixo da
-    diagonal na coluna atual. Reflexões são isometrias exatas — não há
-    subtração de quantidades quase iguais como no Gram-Schmidt — então o
-    erro não acumula: cada passo é ortogonal até a precisão de máquina,
-    independentemente do condicionamento de `matrix`.
+    Each step zeroes out, with a single orthogonal reflection,
+    everything below the diagonal in the current column. Reflections
+    are exact isometries — there's no subtraction of near-equal
+    quantities as in Gram-Schmidt — so the error doesn't accumulate:
+    each step is orthogonal to machine precision, regardless of
+    `matrix`'s conditioning.
     """
     rows, cols = matrix.shape
     r = matrix.astype(np.float64).copy()

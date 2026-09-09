@@ -46,10 +46,10 @@ def test_predictions_are_binary():
 
 @pytest.mark.slow
 def test_test_accuracy_matches_sklearn():
-    """O teste que fecha o módulo: nosso motor, do zero, treina um modelo
-    que generaliza tão bem quanto uma biblioteca de produção no mesmo
-    problema - a prova de que Tensor + SGD + as primitivas compôem um
-    motor de ML que funciona de verdade, não só em exemplos de brinquedo."""
+    """The test that closes the module: our engine, from scratch, trains
+    a model that generalizes as well as a production library on the
+    same problem - proof that Tensor + SGD + the primitives compose an
+    ML engine that actually works, not just on toy examples."""
     x_train, y_train, x_test, y_test = _split_dataset()
 
     model = LogisticRegression(n_features=x_train.shape[1])

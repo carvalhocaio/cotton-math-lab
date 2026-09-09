@@ -1,12 +1,12 @@
 .PHONY: help lint lint-fix format format-check check
 
 help:
-	@echo "Comandos disponíveis no Makefile:"
-	@echo "  make lint          - Executa o linter (ruff check)"
-	@echo "  make lint-fix      - Corrige automaticamente problemas do linter (ruff check --fix)"
-	@echo "  make format        - Formata o código (ruff format)"
-	@echo "  make format-check  - Verifica se o código está formatado (ruff format --check)"
-	@echo "  make check         - Executa o linter e valida a formatação"
+	@echo "Available Makefile commands:"
+	@echo "  make lint          - Runs the linter (ruff check)"
+	@echo "  make lint-fix      - Automatically fixes linter issues (ruff check --fix)"
+	@echo "  make format        - Formats the code (ruff format)"
+	@echo "  make format-check  - Checks whether the code is formatted (ruff format --check)"
+	@echo "  make check         - Runs the linter and validates formatting"
 
 lint:
 	uv run ruff check .

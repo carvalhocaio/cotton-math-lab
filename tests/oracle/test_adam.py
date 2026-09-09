@@ -32,10 +32,10 @@ def test_adam_trajectory_matches_torch():
 
 @pytest.mark.unit
 def test_bias_correction_makes_first_step_exactly_lr_sized():
-    """Em t=1, m̂ = grad e v̂ = grad² exatamente (a correção cancela o
-    fator (1-β) que entrou em m e v) — logo m̂/√v̂ = sign(grad), e o
-    primeiro passo do Adam é sempre ±lr, INDEPENDENTE da magnitude do
-    gradiente. É um invariante matemático, não uma aproximação."""
+    """At t=1, m̂ = grad and v̂ = grad² exactly (the correction cancels
+    the (1-β) factor that entered m and v) — so m̂/√v̂ = sign(grad), and
+    Adam's first step is always ±lr, INDEPENDENT of the gradient's
+    magnitude. It's a mathematical invariant, not an approximation."""
     lr = 0.1
 
     for gradient_value in (0.001, 6.0, 500.0, -3.0):
@@ -44,17 +44,18 @@ def test_bias_correction_makes_first_step_exactly_lr_sized():
         optimizer = Adam([param], lr=lr)
         optimizer.step()
 
-        step_taken = -float(param.data)  # deslocamento em relação a 0.0
+        step_taken = -float(param.data)  # displacement relative to 0.0
         assert abs(step_taken) == pytest.approx(lr, rel=1e-4)
         assert np.sign(step_taken) == np.sign(gradient_value)
 
 
 @pytest.mark.unit
 def test_uncorrected_first_step_is_larger_by_known_factor():
-    """O contraponto: SEM correção de viés, o primeiro passo não é ±lr —
-    fica inflado por (1-β₁)/√(1-β₂), um fator fixo e previsível a partir
-    dos betas, não do gradiente. A raiz só se aplica ao lado de v (que já
-    carrega grad²); o lado de m entra sem raiz nenhuma — daí a assimetria."""
+    """The counterpoint: WITHOUT bias correction, the first step isn't
+    ±lr — it's inflated by (1-β₁)/√(1-β₂), a fixed factor predictable
+    from the betas, not from the gradient. The square root only applies
+    to the v side (which already carries grad²); the m side has no
+    root at all — hence the asymmetry."""
     beta1, beta2, lr, eps = 0.9, 0.999, 0.1, 1e-8
     grad = 6.0
 

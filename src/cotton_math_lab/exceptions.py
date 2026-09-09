@@ -1,17 +1,17 @@
-"""Hierarquia de exceções do laboratório."""
+"""Exception hierarchy for the lab."""
 
 
 class CottonMathLabError(Exception):
-    """Base de todas as exceções do pacote."""
+    """Base for all exceptions in the package."""
 
 
 class InvalidSpecError(CottonMathLabError, ValueError):
-    """Parâmetros de uma especificação são internamente inconsistentes."""
+    """Parameters of a spec are internally inconsistent."""
 
 
 class LinAlgError(CottonMathLabError):
-    """Falha em operação de álgebra linear."""
+    """Failure in a linear algebra operation."""
 
 
 class AutodiffError(CottonMathLabError):
-    """Uso inválido do grafo de diferenciação automática."""
+    """Invalid use of the automatic differentiation graph."""

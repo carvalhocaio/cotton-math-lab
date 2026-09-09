@@ -1,4 +1,4 @@
-"""Motor mínimo de autodiff, modo reverso (estilo micrograd, com arrays)."""
+"""Minimal reverse-mode autodiff engine (micrograd-style, with arrays)."""
 
 import numpy as np
 
@@ -6,13 +6,13 @@ from cotton_math_lab.exceptions import AutodiffError
 
 
 class Tensor:
-    """Nó de um grafo computacional com diferenciação automática reversa.
+    """Node of a computational graph with reverse automatic differentiation.
 
-    Cada operação (`+`, `*`, ...) cria um novo Tensor que guarda, em
-    `_backward`, a regra local de como distribuir o gradiente de saída
-    para seus operandos. `backward()` percorre o grafo em ordem
-    topológica reversa e aplica essas regras em cascata — é a regra da
-    cadeia, uma aplicação local por vez.
+    Each operation (`+`, `*`, ...) creates a new Tensor that stores, in
+    `_backward`, the local rule for how to distribute the output
+    gradient to its operands. `backward()` walks the graph in reverse
+    topological order and applies these rules in cascade — it's the
+    chain rule, one local application at a time.
     """
 
     def __init__(self, data, _children=(), _op=""):
@@ -27,8 +27,8 @@ class Tensor:
         out = Tensor(self.data + other.data, (self, other), "+")
 
         def _backward():
-            # d(a+b)/da = 1, d(a+b)/db = 1 — o gradiente de saída passa
-            # direto para os dois operandos.
+            # d(a+b)/da = 1, d(a+b)/db = 1 — the output gradient passes
+            # straight through to both operands.
             self.grad = self.grad + out.grad
             other.grad = other.grad + out.grad
 
@@ -40,7 +40,7 @@ class Tensor:
         out = Tensor(self.data * other.data, (self, other), "*")
 
         def _backward():
-            # d(a*b)/da = b, d(a*b)/db = a — regra do produto.
+            # d(a*b)/da = b, d(a*b)/db = a — the product rule.
             self.grad = self.grad + other.data * out.grad
             other.grad = other.grad + self.data * out.grad
 
@@ -66,14 +66,14 @@ class Tensor:
     def __pow__(self, exponent):
         if not isinstance(exponent, (int, float)):
             raise AutodiffError(
-                "expoente deve ser escalar (int ou float), não outro Tensor "
-                "- derivada de x**y em relação a y exigiria log(x), fora "
-                "do escopo deste motor mínimo"
+                "exponent must be a scalar (int or float), not another "
+                "Tensor - the derivative of x**y with respect to y would "
+                "require log(x), outside the scope of this minimal engine"
             )
         out = Tensor(self.data**exponent, (self,), f"**{exponent}")
 
         def _backward():
-            # d(x^n)/dx = n·x^(n-1) — regra do tombo.
+            # d(x^n)/dx = n·x^(n-1) — the power rule.
             self.grad = self.grad + (exponent * self.data ** (exponent - 1)) * out.grad
 
         out._backward = _backward
@@ -84,7 +84,7 @@ class Tensor:
         out = Tensor(exponentiated, (self,), "exp")
 
         def _backward():
-            # d(exp(x))/dx = exp(x) — a própria função é a sua derivada.
+            # d(exp(x))/dx = exp(x) — the function is its own derivative.
             self.grad = self.grad + exponentiated * out.grad
 
         out._backward = _backward
@@ -98,19 +98,20 @@ class Tensor:
         return Tensor(other) * self**-1.0
 
     def zero_grad(self) -> None:
-        """Zera o gradiente acumulado — necessário entre passadas de backward
-        que compartilham os mesmos Tensores de entrada (ex: cada linha de
-        um Jacobiano), senão o gradiente da próxima passada soma em cima
-        do resíduo da anterior."""
+        """Zeroes the accumulated gradient — necessary between backward
+        passes that share the same input Tensors (e.g. each row of a
+        Jacobian), otherwise the next pass's gradient would add on top
+        of the previous pass's residual."""
         self.grad = np.zeros_like(self.data)
 
     def backward(self, grad: np.ndarray | None = None) -> None:
-        """Propaga gradientes deste nó até todas as folhas do grafo.
+        """Propagates gradients from this node to every leaf of the graph.
 
-        `grad` semeia o gradiente do nó raiz: por padrão, `ones_like` (a
-        convenção para saída escalar, onde d(saída)/d(saída) = 1). Para
-        Jacobianos, cada linha semeia um vetor one-hot diferente — é assim
-        que se extrai "a derivada de só esta saída" de um nó vetorial.
+        `grad` seeds the root node's gradient: by default, `ones_like`
+        (the convention for a scalar output, where d(output)/d(output) =
+        1). For Jacobians, each row seeds a different one-hot vector —
+        that's how you extract "the derivative of just this output" from
+        a vector-valued node.
         """
         topo: list[Tensor] = []
         visited: set[int] = set()
@@ -149,8 +150,8 @@ class Tensor:
         out = Tensor(np.sum(self.data), (self,), "sum")
 
         def _backward():
-            # d(sum(x))/dxᵢ = 1 para todo i — o gradiente se espalha igual
-            # de volta pra cada elemento que entrou na soma.
+            # d(sum(x))/dxᵢ = 1 for every i — the gradient spreads back
+            # equally to each element that went into the sum.
             self.grad = self.grad + np.ones_like(self.data) * out.grad
 
         out._backward = _backward

@@ -7,9 +7,9 @@ from cotton_math_lab.stats.beta_binomial import beta_binomial_posterior, posteri
 
 @pytest.mark.oracle
 def test_posterior_mean_matches_grid_search():
-    """Valida contra maximização numérica direta da posterior — prior ×
-    verossimilhança binomial, integrada numa grade fina, sem assumir a
-    fórmula fechada em nenhum momento."""
+    """Validates against direct numerical maximization of the posterior
+    — prior × binomial likelihood, integrated on a fine grid, without
+    ever assuming the closed form."""
     k, n = 6, 40
     alpha_prior, beta_prior = 2.0, 18.0
 
@@ -35,8 +35,8 @@ def test_posterior_mean_matches_scipy_beta():
 
 @pytest.mark.unit
 def test_weak_prior_converges_to_mle():
-    """Prior quase-flat (α,β → 0) -> posterior dominada pelos dados, e a
-    média posterior converge para k/n, o MLE de uma binomial."""
+    """Nearly-flat prior (α,β → 0) -> posterior dominated by the data,
+    and the posterior mean converges to k/n, the MLE of a binomial."""
     k, n = 6, 40
     alpha_post, beta_post = beta_binomial_posterior(k, n, 1e-6, 1e-6)
     assert posterior_mean(alpha_post, beta_post) == pytest.approx(k / n, abs=1e-4)
@@ -44,13 +44,13 @@ def test_weak_prior_converges_to_mle():
 
 @pytest.mark.unit
 def test_strong_prior_dominates_with_little_data():
-    """Um prior concentrado (α+β grande) com poucos dados observados
-    (n pequeno) deveria puxar a média posterior de volta pra perto da
-    média do prior, quase ignorando os dados."""
-    strong_alpha, strong_beta = 200.0, 800.0  # prior concentrado perto de 0.2
+    """A concentrated prior (α+β large) with little observed data
+    (small n) should pull the posterior mean back close to the prior
+    mean, nearly ignoring the data."""
+    strong_alpha, strong_beta = 200.0, 800.0  # prior concentrated near 0.2
     prior_mean = strong_alpha / (strong_alpha + strong_beta)
 
-    k, n = 1, 3  # 1 fardo fora de spec em 3 — MLE=0.33, bem longe do prior
+    k, n = 1, 3  # 1 bale out of spec out of 3 — MLE=0.33, far from the prior
     alpha_post, beta_post = beta_binomial_posterior(k, n, strong_alpha, strong_beta)
 
     assert posterior_mean(alpha_post, beta_post) == pytest.approx(prior_mean, abs=0.02)
@@ -58,9 +58,9 @@ def test_strong_prior_dominates_with_little_data():
 
 @pytest.mark.unit
 def test_sequential_updates_equal_single_batch_update():
-    """Propriedade central de conjugação: atualizar em dois lotes (4/20,
-    depois 2/20) deve dar a MESMA posterior que atualizar uma vez com os
-    dados combinados (6/40) — a ordem de chegada da evidência não importa."""
+    """The core conjugation property: updating in two batches (4/20,
+    then 2/20) should give the SAME posterior as updating once with the
+    combined data (6/40) — the order evidence arrives in doesn't matter."""
     prior = (2.0, 18.0)
 
     intermediate = beta_binomial_posterior(4, 20, *prior)

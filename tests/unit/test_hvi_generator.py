@@ -5,7 +5,7 @@ from cotton_math_lab.data.hvi import default_spec, generate_bales
 
 N_LARGE = 20_000
 SEED = 2024
-Z_TOL = 4.0  # ~1 em 16 mil por feature; margem medida foi 2.6
+Z_TOL = 4.0  # ~1 in 16 thousand per feature; measured margin was 2.6
 
 
 @pytest.mark.unit
@@ -33,7 +33,7 @@ def test_different_seeds_produce_different_bales():
 
 @pytest.mark.unit
 def test_recovers_population_means():
-    """Erro da média amostral deve caber em Z_TOL erros-padrão (σ/√n)."""
+    """The sample mean's error should fit within Z_TOL standard errors (σ/√n)."""
     spec = default_spec()
     bales = generate_bales(spec, n=N_LARGE, seed=SEED)
 
@@ -45,7 +45,7 @@ def test_recovers_population_means():
 
 @pytest.mark.unit
 def test_recovers_population_stds():
-    """Erro-padrão do desvio amostral é σ/√(2n)."""
+    """The sample standard deviation's standard error is σ/√(2n)."""
     spec = default_spec()
     bales = generate_bales(spec, n=N_LARGE, seed=SEED)
 
@@ -57,7 +57,7 @@ def test_recovers_population_stds():
 
 @pytest.mark.unit
 def test_recovers_population_correlation():
-    """Compara em espaço-z de Fisher, onde o erro-padrão é 1/√(n-3)."""
+    """Compares in Fisher z-space, where the standard error is 1/√(n-3)."""
     spec = default_spec()
     bales = generate_bales(spec, n=N_LARGE, seed=SEED)
 
@@ -82,4 +82,4 @@ def test_quality_labels_are_deterministic_and_balanced():
     np.testing.assert_array_equal(first, second)
 
     assert set(np.unique(first)) <= {0.0, 1.0}
-    assert 0.3 < first.mean() < 0.7  # nem trivialmente desbalanceado
+    assert 0.3 < first.mean() < 0.7  # not trivially imbalanced

@@ -1,10 +1,10 @@
-"""Regressão logística construída inteiramente com as peças do Módulo 2.
+"""Logistic regression built entirely from Module 2's pieces.
 
-Nenhuma linha aqui vem de numpy fazendo a conta pronta: `sigmoid` é
-composição de exp e divisão, a perda é composição de log e soma, e o
-treino inteiro roda através de `Tensor.backward()` e `SGD` — as mesmas
-peças validadas contra torch, diferenças finitas e umas contra as outras
-ao longo do módulo inteiro.
+No line here comes from numpy doing the math ready-made: `sigmoid` is a
+composition of exp and division, the loss is a composition of log and
+sum, and the entire training loop runs through `Tensor.backward()` and
+`SGD` — the same pieces validated against torch, finite differences, and
+each other throughout the whole module.
 """
 
 import numpy as np
@@ -22,7 +22,7 @@ def binary_cross_entropy(prediction: Tensor, target: float) -> Tensor:
 
 
 class LogisticRegression:
-    """Classificador binário linear, treinado por SGD sobre o `Tensor`."""
+    """Linear binary classifier, trained by SGD on top of `Tensor`."""
 
     def __init__(self, n_features: int):
         self.weights = Tensor(np.zeros(n_features))

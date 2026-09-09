@@ -5,7 +5,7 @@ from cotton_math_lab.linalg.eigen import qr_algorithm
 
 
 def _symmetric_matrix(eigenvalues: np.ndarray, seed: int) -> np.ndarray:
-    """Constrói A = Q·diag(eigenvalues)·Qᵀ com Q ortogonal aleatória."""
+    """Builds A = Q·diag(eigenvalues)·Qᵀ with a random orthogonal Q."""
     rng = np.random.default_rng(seed)
     m = rng.standard_normal((len(eigenvalues), len(eigenvalues)))
     q, _ = np.linalg.qr(m)
@@ -41,7 +41,7 @@ def test_eigenvectors_are_orthonormal():
 
 @pytest.mark.oracle
 def test_no_orthogonality_degradation_across_deflation_like_use():
-    """O ponto que a deflação não tinha: precisão não cai nos últimos pares."""
+    """The point deflation didn't have: precision doesn't drop for the last pairs."""
     matrix = _symmetric_matrix(np.linspace(20.0, 0.1, 8), seed=3)
     _, eigenvectors = qr_algorithm(matrix)
 
@@ -52,7 +52,7 @@ def test_no_orthogonality_degradation_across_deflation_like_use():
 
 @pytest.mark.unit
 def test_narrow_spectral_gap_needs_far_more_iterations():
-    """Mesmo mecanismo da power iteration: taxa governada por |λ_{k+1}/λ_k|."""
+    """Same mechanism as power iteration: rate governed by |λ_{k+1}/λ_k|."""
     wide = _symmetric_matrix(np.array([10.0, 1.0, 0.5, 0.1]), seed=4)
     narrow = _symmetric_matrix(np.array([10.0, 9.999, 5.0, 1.0]), seed=4)
 
@@ -68,7 +68,7 @@ def test_raises_on_non_symmetric_matrix():
 
     rng = np.random.default_rng(2)
     matrix = rng.standard_normal((4, 4))
-    with pytest.raises(LinAlgError, match="simétrica"):
+    with pytest.raises(LinAlgError, match="symmetric"):
         qr_algorithm(matrix)
 
 
@@ -76,5 +76,5 @@ def test_raises_on_non_symmetric_matrix():
 def test_raises_on_non_square_matrix():
     from cotton_math_lab.exceptions import LinAlgError
 
-    with pytest.raises(LinAlgError, match="quadrada"):
+    with pytest.raises(LinAlgError, match="square"):
         qr_algorithm(np.ones((3, 4)))

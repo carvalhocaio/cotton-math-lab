@@ -8,7 +8,7 @@ from cotton_math_lab.infotheory.discrete import (
     kl_divergence_discrete,
 )
 
-# distribuição de faixas de qualidade de fardos: premium, standard, off-spec
+# distribution of bale quality grades: premium, standard, off-spec
 P = np.array([0.5, 0.35, 0.15])
 Q = np.array([0.4, 0.4, 0.2])
 
@@ -20,15 +20,15 @@ def test_entropy_matches_scipy():
 
 @pytest.mark.oracle
 def test_kl_divergence_matches_scipy():
-    """scipy.stats.entropy(p, q) calcula KL(p||q) quando os dois argumentos
-    são passados — não precisa de biblioteca separada pra KL."""
+    """scipy.stats.entropy(p, q) computes KL(p||q) when both arguments
+    are passed — no separate library is needed for KL."""
     assert kl_divergence_discrete(P, Q) == pytest.approx(scipy_entropy(P, Q))
 
 
 @pytest.mark.unit
 def test_cross_entropy_decomposes_into_entropy_plus_kl():
-    """H(p,q) = H(p) + D_KL(p||q) — a identidade que conecta os três
-    conceitos do ciclo, testada diretamente, não assumida."""
+    """H(p,q) = H(p) + D_KL(p||q) — the identity that connects the
+    cycle's three concepts, tested directly, not assumed."""
     cross = cross_entropy_discrete(P, Q)
     decomposed = entropy_discrete(P) + kl_divergence_discrete(P, Q)
     assert cross == pytest.approx(decomposed)
@@ -41,9 +41,9 @@ def test_kl_is_zero_between_identical_distributions():
 
 @pytest.mark.unit
 def test_kl_satisfies_gibbs_inequality():
-    """D_KL(p||q) ≥ 0 sempre, pra qualquer par de distribuições — testado
-    em 5000 pares aleatórios via simplex (Dirichlet), não só no exemplo
-    do domínio."""
+    """D_KL(p||q) ≥ 0 always, for any pair of distributions — tested on
+    5000 random pairs via the simplex (Dirichlet), not just the domain
+    example."""
     rng = np.random.default_rng(0)
     for _ in range(5000):
         a = rng.dirichlet(np.ones(4))
@@ -53,9 +53,9 @@ def test_kl_satisfies_gibbs_inequality():
 
 @pytest.mark.unit
 def test_uniform_distribution_maximizes_entropy():
-    """Entre 3000 distribuições aleatórias sobre 5 categorias, nenhuma
-    supera a entropia da uniforme (log 5) — a uniforme é o máximo global,
-    não só um bom candidato."""
+    """Among 3000 random distributions over 5 categories, none exceeds
+    the entropy of the uniform (log 5) — the uniform is the global
+    maximum, not just a good candidate."""
     n = 5
     uniform_entropy = entropy_discrete(np.ones(n) / n)
 

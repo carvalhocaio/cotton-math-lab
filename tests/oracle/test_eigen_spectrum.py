@@ -28,7 +28,7 @@ def test_eigenvalues_returned_in_descending_order():
 
 @pytest.mark.oracle
 def test_recovered_eigenvectors_are_orthonormal():
-    """Autovetores de matriz simétrica formam base ortonormal: VᵀV = I."""
+    """Eigenvectors of a symmetric matrix form an orthonormal basis: VᵀV = I."""
     matrix = _symmetric_psd(6, seed=4)
     _, vectors = eigen_spectrum(matrix, seed=0)
 
@@ -38,7 +38,7 @@ def test_recovered_eigenvectors_are_orthonormal():
 
 @pytest.mark.oracle
 def test_eigendecomposition_reconstructs_matrix():
-    """A = V·Λ·Vᵀ — o teste mais forte: o espectro inteiro remonta A."""
+    """A = V·Λ·Vᵀ — the strongest test: the whole spectrum rebuilds A."""
     matrix = _symmetric_psd(5, seed=5)
     eigenvalues, vectors = eigen_spectrum(matrix, seed=0)
 
@@ -60,5 +60,5 @@ def test_raises_on_non_symmetric_matrix():
 
     rng = np.random.default_rng(1)
     matrix = rng.standard_normal((4, 4))
-    with pytest.raises(LinAlgError, match="simétrica"):
+    with pytest.raises(LinAlgError, match="symmetric"):
         eigen_spectrum(matrix, seed=0)

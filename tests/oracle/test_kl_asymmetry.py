@@ -17,8 +17,8 @@ def _bimodal_target(x):
 
 @pytest.mark.oracle
 def test_kl_grid_matches_closed_form_gaussian_kl():
-    """Valida a integração numérica contra a fórmula fechada de KL entre
-    duas Gaussianas — nenhuma aproximação assumida, só conferida."""
+    """Validates the numerical integration against the closed-form KL
+    between two Gaussians — no approximation assumed, only checked."""
     mu1, sigma1 = -1.0, 1.5
     mu2, sigma2 = 2.0, 0.8
     fine_grid = np.linspace(-20, 20, 200_000)
@@ -35,20 +35,21 @@ def test_kl_grid_matches_closed_form_gaussian_kl():
 
 @pytest.mark.unit
 def test_forward_kl_spreads_to_cover_both_modes():
-    """Forward KL (mean-seeking): a Gaussiana ótima cobre os dois modos —
-    média exatamente no meio, desvio-padrão grande o suficiente pra não
-    deixar nenhum modo com densidade baixa demais."""
+    """Forward KL (mean-seeking): the optimal Gaussian covers both modes
+    — mean exactly in the middle, standard deviation large enough that
+    neither mode is left with too-low density."""
     mu, sigma = fit_gaussian_by_forward_kl(_bimodal_target, X_GRID)
 
     assert mu == pytest.approx(0.0, abs=1e-6)
-    assert sigma > 2.5  # bem mais larga que qualquer componente (sigma=1)
+    assert sigma > 2.5  # much wider than either component (sigma=1)
 
 
 @pytest.mark.unit
 def test_reverse_kl_collapses_onto_one_mode():
-    """Reverse KL (mode-seeking): partindo perto do modo esquerdo, a
-    Gaussiana ótima colapsa nele — média e desvio-padrão praticamente
-    replicam UM componente da mistura, ignorando o outro."""
+    """Reverse KL (mode-seeking): starting near the left mode, the
+    optimal Gaussian collapses onto it — mean and standard deviation
+    practically replicate ONE component of the mixture, ignoring the
+    other."""
     mu, sigma = fit_gaussian_by_reverse_kl(_bimodal_target, X_GRID, init_mu=-2.5)
 
     assert mu == pytest.approx(-3.0, abs=0.1)
@@ -57,9 +58,9 @@ def test_reverse_kl_collapses_onto_one_mode():
 
 @pytest.mark.unit
 def test_reverse_kl_result_depends_on_initialization():
-    """Ao contrário do forward KL (forma fechada, ótimo único), reverse
-    KL tem múltiplos ótimos locais — o resultado depende de onde a
-    otimização começa, a assinatura de uma superfície não-convexa."""
+    """Unlike forward KL (closed form, unique optimum), reverse KL has
+    multiple local optima — the result depends on where the
+    optimization starts, the signature of a non-convex surface."""
     mu_left, _ = fit_gaussian_by_reverse_kl(_bimodal_target, X_GRID, init_mu=-2.5)
     mu_right, _ = fit_gaussian_by_reverse_kl(_bimodal_target, X_GRID, init_mu=2.5)
 
@@ -70,8 +71,9 @@ def test_reverse_kl_result_depends_on_initialization():
 
 @pytest.mark.unit
 def test_forward_kl_fit_is_wider_than_reverse_kl_fit():
-    """A assinatura numérica da assimetria, num único número: forward KL
-    produz sigma muito maior que reverse KL, no mesmo alvo bimodal."""
+    """The numerical signature of the asymmetry, in a single number:
+    forward KL produces a much larger sigma than reverse KL, on the
+    same bimodal target."""
     _, sigma_forward = fit_gaussian_by_forward_kl(_bimodal_target, X_GRID)
     _, sigma_reverse = fit_gaussian_by_reverse_kl(_bimodal_target, X_GRID, init_mu=-2.5)
 

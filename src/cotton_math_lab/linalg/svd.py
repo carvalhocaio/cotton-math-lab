@@ -1,8 +1,7 @@
-"""SVD via Jacobi de um lado (Hestenes).
+"""One-sided Jacobi SVD (Hestenes).
 
-Ao contrário de decompor a covariância (XᵀX), este método opera direto
-sobre as colunas de X, nunca formando XᵀX como uma matriz explícita de
-uma vez só.
+Unlike decomposing the covariance (XᵀX), this method operates directly
+on the columns of X, never forming XᵀX as an explicit matrix all at once.
 """
 
 import numpy as np
@@ -16,26 +15,27 @@ def svd_jacobi_one_sided(
     max_sweeps: int = 100,
     tol: float = 1e-14,
 ):
-    """SVD reduzida (m ≥ n) via rotações de Jacobi entre pares de colunas.
+    """Reduced SVD (m ≥ n) via Jacobi rotations between column pairs.
 
-    Cada passo escolhe duas colunas (i, j) e aplica uma rotação 2×2 que as
-    torna ortogonais entre si — a rotação zera o produto interno ⟨aᵢ, aⱼ⟩
-    exatamente, por construção geométrica, não por diferença numérica entre
-    quantidades próximas. Repetindo sobre todos os pares (uma "varredura"),
-    e repetindo varreduras, a matriz inteira converge para colunas
-    mutuamente ortogonais: normalizando cada coluna, sua norma é o valor
-    singular e a direção é a coluna de U; a rotação acumulada é V.
+    Each step picks two columns (i, j) and applies a 2×2 rotation that
+    makes them orthogonal to each other — the rotation zeroes the inner
+    product ⟨aᵢ, aⱼ⟩ exactly, by geometric construction, not by a
+    numerical difference between close quantities. Repeating over all
+    pairs (a "sweep"), and repeating sweeps, the entire matrix converges
+    to mutually orthogonal columns: normalizing each column, its norm is
+    the singular value and its direction is the column of U; the
+    accumulated rotation is V.
 
-    O ponto central: cada rotação usa ⟨aᵢ, aⱼ⟩ calculado sob demanda, a
-    partir dos valores atuais e já refinados das colunas — nunca contamina
-    todos os produtos internos de uma vez formando XᵀX inteira antes de
-    começar a decompor. É por isso que a precisão relativa se mantém mesmo
-    quando colunas de `matrix` são quase paralelas (mal-condicionadas).
+    The central point: each rotation uses ⟨aᵢ, aⱼ⟩ computed on demand,
+    from the current, already-refined column values — it never
+    contaminates all inner products at once by forming the entire XᵀX
+    before any refinement happens. That's why relative precision holds
+    even when columns of `matrix` are nearly parallel (ill-conditioned).
     """
     rows, cols = matrix.shape
     if rows < cols:
         raise LinAlgError(
-            f"requer ao menos tantas linhas quanto colunas, recebido {matrix.shape}"
+            f"requires at least as many rows as columns, received {matrix.shape}"
         )
 
     a = matrix.astype(np.float64).copy()

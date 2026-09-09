@@ -1,269 +1,269 @@
 # 02 — Autodiff
 
-Motor mínimo de diferenciação automática, dois modos: reverso (`Tensor`,
-estilo micrograd) e forward (`Dual`, números duais). Os dois são validados
-de forma independente — um contra o outro, e ambos contra `torch.autograd`
-e diferenças finitas centrais — porque nenhum autodiff deveria confiar só
-em si mesmo pra provar que está certo.
+Minimal automatic differentiation engine, two modes: reverse (`Tensor`,
+micrograd-style) and forward (`Dual`, dual numbers). Both are validated
+independently — against each other, and both against `torch.autograd`
+and central finite differences — because no autodiff engine should trust only
+itself to prove it's correct.
 
 ---
 
-## O motor reverso: três decisões de design
+## The reverse engine: three design decisions
 
-**Cada operação retorna um novo `Tensor` que carrega uma closure `_backward`.**
-Quando `c = a * b`, o `Tensor` resultante guarda uma função que sabe
-distribuir o gradiente de volta para `a` e `b` — a regra local da
-multiplicação ($\partial c/\partial a = b$, $\partial c/\partial b = a$).
-Isso é o que separa autodiff de diferenciação simbólica: nunca se constrói
-uma expressão matemática explícita para a derivada, só um grafo de regras
-locais que se aplicam em cascata.
+**Each operation returns a new `Tensor` that carries a `_backward` closure.**
+When `c = a * b`, the resulting `Tensor` stores a function that knows how to
+distribute the gradient back to `a` and `b` — the local rule of
+multiplication ($\partial c/\partial a = b$, $\partial c/\partial b = a$).
+This is what separates autodiff from symbolic differentiation: you never build
+an explicit mathematical expression for the derivative, just a graph of local
+rules that apply in cascade.
 
-**`backward()` percorre o grafo em ordem topológica reversa.** Constrói a
-ordem por DFS (visita filhos antes de se adicionar à lista), depois
-processa de trás pra frente. Isso garante que, quando `_backward()` de um
-nó roda, todos os nós que dependem dele já processaram e já depositaram
-sua contribuição de gradiente.
+**`backward()` walks the graph in reverse topological order.** It builds the
+order via DFS (visiting children before adding itself to the list), then
+processes back to front. This guarantees that, when a node's `_backward()`
+runs, every node that depends on it has already been processed and has already
+deposited its gradient contribution.
 
-**Gradiente acumula com `+=`, nunca sobrescreve.** Se uma variável é usada
-duas vezes no grafo (ex: $y = x \cdot x$), ela recebe contribuição de
-gradiente por **dois caminhos diferentes**, e a regra da cadeia
-multivariável diz que a derivada total é a **soma** das contribuições de
-cada caminho. Sobrescrever em vez de acumular é o bug clássico que faz
-autodiff parecer funcionar em exemplos simples e falhar silenciosamente
-assim que uma variável é reutilizada.
+**The gradient accumulates with `+=`, never overwrites.** If a variable is used
+twice in the graph (e.g. $y = x \cdot x$), it receives a gradient
+contribution via **two different paths**, and the multivariable chain
+rule says the total derivative is the **sum** of each path's
+contributions. Overwriting instead of accumulating is the classic bug that makes
+autodiff look like it works on simple examples and fail silently
+as soon as a variable is reused.
 
-Os três pontos foram validados contra `torch.autograd`: expressão de três
-variáveis, variável reutilizada, e tensores vetoriais elementwise — os
-quatro bateram exatamente.
+The three points were validated against `torch.autograd`: a three-variable
+expression, a reused variable, and elementwise vector tensors — all four
+matched exactly.
 
-## Composicionalidade: divisão sem regra própria
+## Compositionality: division with no rule of its own
 
-`__truediv__` é implementado como `self * other**-1` — não existe uma
-`_backward` escrita à mão para divisão. O gradiente correto emerge
-automaticamente da composição de duas regras já existentes (`mul` e
-`pow`), porque o motor não sabe que está "dividindo": só está encadeando
-multiplicação e potenciação, e a regra da cadeia cuida do resto.
+`__truediv__` is implemented as `self * other**-1` — there's no
+hand-written `_backward` for division. The correct gradient
+emerges automatically from composing two existing rules (`mul` and
+`pow`), because the engine doesn't know it's "dividing": it's just chaining
+multiplication and exponentiation, and the chain rule takes care of the rest.
 
-Isso é o argumento central de por que autodiff escala para redes com
-milhões de operações: escreve-se a regra local de um punhado de primitivas
-(`+`, `*`, `pow`, `exp`), e qualquer composição delas — por mais profunda
-que seja — deriva automaticamente, sem uma regra nova para cada combinação
-possível.
+This is the central argument for why autodiff scales to networks with
+millions of operations: you write the local rule for a handful of primitives
+(`+`, `*`, `pow`, `exp`), and any composition of them — no matter how
+deep — differentiates automatically, with no new rule needed for each
+possible combination.
 
-Pela mesma razão, `x ** Tensor(...)` é bloqueado explicitamente: o motor
-sabe derivar $x^n$ em relação a $x$ (regra do tombo), mas não em relação a
-um expoente que também é variável — isso exigiria $\partial(x^y)/\partial y
-= x^y \ln x$, uma primitiva que não foi implementada. É mais honesto barrar
-com uma mensagem clara do que deixar alguém descobrir isso via um
-gradiente silenciosamente errado.
+For the same reason, `x ** Tensor(...)` is explicitly blocked: the engine
+knows how to differentiate $x^n$ with respect to $x$ (the power rule), but not with respect to
+an exponent that's also a variable — that would require $\partial(x^y)/\partial y
+= x^y \ln x$, a primitive that wasn't implemented. It's more honest to block it
+with a clear message than to let someone discover it via a
+silently wrong gradient.
 
 ---
 
-## Diferenças finitas centrais: o oráculo dos oráculos
+## Central finite differences: the oracle of oracles
 
-`numerical_gradient` serve como validação independente de qualquer outro
-motor de autodiff — não depende do torch existir, só da definição de
-derivada:
+`numerical_gradient` serves as an independent validation for any other
+autodiff engine — it doesn't depend on torch existing, only on the
+definition of the derivative:
 
 $$
 \frac{\partial f}{\partial x_i} \approx \frac{f(x + h e_i) - f(x - h e_i)}{2h}
 $$
 
-O erro de truncamento dessa aproximação é $O(h^2)$ — então "diminuir $h$"
-parece sempre melhorar a precisão. Não melhora. Medido empiricamente numa
-função com derivada conhecida em forma fechada ($f(x)=\sum x^3$):
+The truncation error of this approximation is $O(h^2)$ — so "decreasing $h$"
+always seems to improve precision. It doesn't. Measured empirically on a
+function with a known closed-form derivative ($f(x)=\sum x^3$):
 
-| $h$ | erro relativo |
+| $h$ | relative error |
 |---|---|
 | $10^{-1}$ | $6.8\times10^{-3}$ |
 | $10^{-3}$ | $6.8\times10^{-7}$ |
-| $10^{-5}$ | $8.5\times10^{-11}$ ← ótimo |
+| $10^{-5}$ | $8.5\times10^{-11}$ ← optimal |
 | $10^{-8}$ | $9.8\times10^{-9}$ |
 | $10^{-12}$ | $8.9\times10^{-5}$ |
 
-O erro cai, atinge um mínimo perto de $10^{-5}$–$10^{-6}$, e sobe de novo
-conforme $h$ continua diminuindo. Perto da precisão de máquina
-($\varepsilon \approx 2.2\times10^{-16}$), a subtração
-$f(x{+}h) - f(x{-}h)$ passa a ser dominada por ruído de arredondamento —
-cancelamento catastrófico, a mesma doença numérica do Gram-Schmidt no
-Módulo 1, só que aqui atingindo a própria definição de derivada, não um
-efeito colateral de algoritmo. O ponto ótimo teórico fica perto de
-$\varepsilon^{1/3}$ (não $\varepsilon^{1/2}$, que seria a intuição
-ingênua) — vale revisitar a Fase 1.1 (erro em ponto flutuante) pra
-entender por quê.
+The error drops, reaches a minimum near $10^{-5}$–$10^{-6}$, and rises again
+as $h$ keeps shrinking. Near machine precision
+($\varepsilon \approx 2.2\times10^{-16}$), the subtraction
+$f(x{+}h) - f(x{-}h)$ becomes dominated by rounding noise —
+catastrophic cancellation, the same numerical disease as Gram-Schmidt in
+Module 1, only here hitting the very definition of the derivative, not a
+side effect of an algorithm. The theoretical optimum sits near
+$\varepsilon^{1/3}$ (not $\varepsilon^{1/2}$, which would be the naive
+intuition) — worth revisiting Phase 1.1 (floating-point error) to
+understand why.
 
 ---
 
-## Jacobiano, modo reverso: m passadas, uma por saída
+## Jacobian, reverse mode: m passes, one per output
 
-Para $f: \mathbb{R}^n \to \mathbb{R}^m$, cada linha do Jacobiano vem de um
-`backward()` independente, semeando a saída correspondente com gradiente
-1 e as demais com 0. Isso custa **$m$ passadas completas** — reconstruindo
-o grafo do zero a cada linha, porque este motor não retém o grafo entre
-chamadas de backward (não há `retain_graph`, como no PyTorch). Sem reter,
-nós internos compartilhados entre duas saídas acumulariam gradiente
-incorretamente se o mesmo grafo fosse reusado sem zerar tudo — é
-exatamente esse problema que o `retain_graph=True` do PyTorch resolve,
-como opção explícita em vez de comportamento padrão.
+For $f: \mathbb{R}^n \to \mathbb{R}^m$, each row of the Jacobian comes from an
+independent `backward()`, seeding the corresponding output with gradient
+1 and the rest with 0. This costs **$m$ full passes** — rebuilding
+the graph from scratch each row, because this engine doesn't retain the graph between
+backward calls (there's no `retain_graph`, unlike PyTorch). Without retaining,
+internal nodes shared between two outputs would accumulate gradient
+incorrectly if the same graph were reused without zeroing everything out — it's
+exactly this problem that PyTorch's `retain_graph=True` solves,
+as an explicit option instead of the default behavior.
 
-O ponto estrutural: **modo reverso é ótimo quando $m \ll n$** — poucas
-saídas, muitas entradas. É por isso que treinar redes neurais usa reverse
-mode: a loss é escalar ($m=1$), os parâmetros são milhões ($n$ grande), e
-um único `backward()` pega o gradiente inteiro.
+The structural point: **reverse mode is optimal when $m \ll n$** — few
+outputs, many inputs. That's why training neural networks uses reverse
+mode: the loss is scalar ($m=1$), the parameters number in the millions ($n$ large), and
+a single `backward()` gets the entire gradient.
 
 ---
 
-## Modo forward: números duais
+## Forward mode: dual numbers
 
-Um número dual $x + \varepsilon x'$, com $\varepsilon^2 = 0$, carrega
-valor e derivada juntos, propagados num único passe pra frente. Não há
-grafo, não há fase de backward — a derivada já sai pronta na parte dual
-no mesmo passe que calcula o valor. A regra do produto sai de graça da
-álgebra: $(a+\varepsilon a')(b+\varepsilon b') = ab + \varepsilon(ab'+a'b)$,
-já que $\varepsilon^2$ descarta o termo cruzado.
+A dual number $x + \varepsilon x'$, with $\varepsilon^2 = 0$, carries
+value and derivative together, propagated in a single forward pass. There's no
+graph, no backward phase — the derivative already comes out ready in the dual
+part, in the same pass that computes the value. The product rule falls out for
+free from the algebra: $(a+\varepsilon a')(b+\varepsilon b') = ab + \varepsilon(ab'+a'b)$,
+since $\varepsilon^2$ discards the cross term.
 
-`jacobian_forward` é o espelho exato do reverso: em vez de $m$ passadas
-(cada uma dando uma linha inteira), são **$n$ passadas** (cada uma dando
-uma coluna inteira — todas as saídas, para uma direção de entrada).
+`jacobian_forward` is the exact mirror of the reverse version: instead of $m$ passes
+(each giving one full row), it takes **$n$ passes** (each giving
+one full column — every output, for one input direction).
 
-### A prova, com contagem exata de chamadas
+### The proof, with exact call counts
 
-Duas funções, direções opostas de $n$ vs. $m$, instrumentadas pra contar
-quantas vezes `f` é avaliada:
+Two functions, opposite directions of $n$ vs. $m$, instrumented to count
+how many times `f` gets evaluated:
 
-| Caso | $n$ (entradas) | $m$ (saídas) | chamadas forward | chamadas reverso |
+| Case | $n$ (inputs) | $m$ (outputs) | forward calls | reverse calls |
 |---|---|---|---|---|
-| "largo" | 6 | 1 | **6** | **1** |
-| "alto" | 2 | 5 | **2** | **5** |
+| "wide" | 6 | 1 | **6** | **1** |
+| "tall" | 2 | 5 | **2** | **5** |
 
-Os dois modos concordam exatamente no resultado (validado por
-`test_forward_and_reverse_modes_agree`) — a única coisa que muda é o
-custo, e o custo segue $n$ para forward, $m$ para reverso, sem exceção.
-**Não existe modo universalmente melhor**: a escolha depende inteiramente
-da forma de $f$. Redes neurais têm $m=1$ (a loss) e $n$ em milhões —
-reverso vence sempre, por uma margem gigantesca. Um sistema de equações
-com poucas entradas e muitas saídas inverteria a escolha.
-
----
-
-## Fechando o argumento do módulo
-
-Cinco peças — `Tensor`, composicionalidade, diferenças finitas,
-Jacobiano reverso, números duais — convergem para um só ponto: **o modo
-"certo" de autodiff não existe isolado da forma do problema.** Reverso
-ganha quando a saída é escalar e as entradas são muitas (o caso de
-treinar redes); forward ganha no caso oposto. E diferenças finitas — que
-não é nem forward nem reverso, é só a definição de derivada aplicada
-ingenuamente — continua sendo indispensável não porque seja rápido, mas
-porque é o único dos três que não pode estar errado da mesma forma que os
-outros dois: qualquer bug de regra de `_backward` ou de `Dual` se
-denuncia contra ele.
+Both modes agree exactly on the result (validated by
+`test_forward_and_reverse_modes_agree`) — the only thing that changes is the
+cost, and the cost follows $n$ for forward, $m$ for reverse, with no exception.
+**There's no universally better mode**: the choice depends entirely on
+$f$'s shape. Neural networks have $m=1$ (the loss) and $n$ in the millions —
+reverse wins every time, by a huge margin. A system of equations
+with few inputs and many outputs would flip the choice.
 
 ---
 
-## Hessiana: um híbrido deliberado, não autodiff de segunda ordem
+## Closing the module's argument
 
-Este motor não faz diferenciação automática de segunda ordem "de verdade".
-Isso exigiria que a própria passada de `backward()` fosse parte de um
-grafo diferenciável — cada operação dentro de `_backward()` teria que ser
-construída com `Tensor`s, não com aritmética crua de `numpy`, para que um
-segundo `backward()` pudesse propagar através da primeira passada. É
-exatamente o que o PyTorch faz com `create_graph=True`, e é uma extensão
-real do motor, não um ajuste pequeno — cada uma das clousures de
-`_backward` teria que virar, ela mesma, uma composição de `Tensor`s
-diferenciável.
+Five pieces — `Tensor`, compositionality, finite differences,
+reverse Jacobian, dual numbers — converge on a single point: **the "right"
+mode of autodiff doesn't exist in isolation from the shape of the problem.** Reverse
+wins when the output is scalar and the inputs are many (the case for
+training networks); forward wins in the opposite case. And finite
+differences — which is neither forward nor reverse, it's just the definition of
+the derivative applied naively — remains indispensable not because it's fast, but
+because it's the only one of the three that can't be wrong in the same way as the
+other two: any bug in a `_backward` rule or in `Dual` gives itself
+away against it.
 
-Em vez disso, `hessian()` é um híbrido deliberado:
+---
+
+## Hessian: a deliberate hybrid, not second-order autodiff
+
+This engine doesn't do "real" second-order automatic differentiation.
+That would require the `backward()` pass itself to be part of a
+differentiable graph — every operation inside `_backward()` would have to
+be built with `Tensor`s, not raw `numpy` arithmetic, so that a
+second `backward()` could propagate through the first pass. That's
+exactly what PyTorch does with `create_graph=True`, and it's a real
+extension of the engine, not a small tweak — each of the `_backward`
+closures would have to become, itself, a differentiable composition
+of `Tensor`s.
+
+Instead, `hessian()` is a deliberate hybrid:
 
 $$
 H_{:,j} \approx \frac{\nabla f(x_0 + h\,e_j) - \nabla f(x_0 - h\,e_j)}{2h}
 $$
 
-O gradiente $\nabla f$ vem de `gradient()` — **exato**, via `Tensor.backward()`,
-sem nenhum erro de truncamento. A diferença finita central é aplicada
-**sobre esse gradiente já exato**, não sobre $f$ diretamente. O resultado:
-metade da Hessiana vem de autodiff (a parte que cada coluna representa —
-o vetor gradiente inteiro, em cada ponto perturbado), e a outra metade
-vem de diferença finita (a forma como as colunas se combinam). É mais
-barato que autodiff de segunda ordem completo, e mais preciso que aplicar
-diferença finita duas vezes em cascata (o que dobraria o erro de
-truncamento $O(h^2)$ acumulado).
+The gradient $\nabla f$ comes from `gradient()` — **exact**, via `Tensor.backward()`,
+with no truncation error. The central finite difference is applied
+**on top of that already-exact gradient**, not directly on $f$. The result:
+half the Hessian comes from autodiff (the part each column represents —
+the entire gradient vector, at each perturbed point), and the other half
+comes from finite differences (how the columns combine). It's
+cheaper than full second-order autodiff, and more precise than applying
+finite differences twice in cascade (which would double the accumulated
+truncation error $O(h^2)$).
 
-## O teste que teria pego um bug real: simetria de Schwarz
+## The test that would have caught a real bug: Schwarz's symmetry
 
-`test_hessian_is_symmetric` não é uma checagem incidental — ele codifica o
-**teorema de Schwarz** (as derivadas parciais mistas comutam,
+`test_hessian_is_symmetric` isn't an incidental check — it encodes
+**Schwarz's theorem** (mixed partial derivatives commute,
 $\partial^2f/\partial x_i\partial x_j = \partial^2f/\partial x_j\partial x_i$,
-para $f$ suficientemente suave). Numa implementação de Hessiana via
-double-backward de verdade, essa simetria sairia garantida pela própria
-estrutura do grafo computacional. Aqui, **não é garantida por construção**
-— `hessian()` calcula cada coluna de forma independente, perturbando uma
-variável de cada vez, sem nenhuma lógica que force $H_{ij} = H_{ji}$
-explicitamente.
+for sufficiently smooth $f$). In a real double-backward Hessian
+implementation, that symmetry would come guaranteed by the computational
+graph's own structure. Here, **it isn't guaranteed by construction**
+— `hessian()` computes each column independently, perturbing one
+variable at a time, with no logic that forces $H_{ij} = H_{ji}$
+explicitly.
 
-A simetria observada (~$10^{-11}$ de assimetria residual, só ruído de
-ponto flutuante) é uma propriedade **emergente** de dois processos
-numéricos independentes — gradiente exato mais diferença finita —
-concordando porque a matemática subjacente é simétrica, não porque o
-código garante. Se esse teste falhasse um dia, seria sinal de bug real na
-implementação (ex: um erro de índice trocando $i$ e $j$ em algum lugar),
-não de imprecisão numérica esperada — é exatamente o tipo de teste que
-vale manter mesmo depois que "parece óbvio que vai passar".
+The observed symmetry (~$10^{-11}$ of residual asymmetry, just floating-point
+noise) is an **emergent** property of two independent numerical
+processes — exact gradient plus finite difference —
+agreeing because the underlying math is symmetric, not because the
+code guarantees it. If this test ever failed, it would signal a real
+implementation bug (e.g. an index error swapping $i$ and $j$ somewhere),
+not expected numerical imprecision — it's exactly the kind of test
+worth keeping even after it "obviously looks like it will pass".
 
-## Fechando o cálculo vetorial da Fase 1.1
+## Closing Phase 1.1's vector calculus
 
-Gradiente, Jacobiano, Hessiana — as três derivadas que a Fase 1.1 pedia
-("gradientes, Jacobianos, Hessianos, regra da cadeia") agora têm
-implementação própria, validada por três oráculos independentes que nunca
-concordam por acidente: `torch.autograd` (outro motor de autodiff inteiro),
-diferenças finitas centrais (a definição de derivada, sem nenhum motor),
-e — no caso da Hessiana — o teorema de Schwarz (uma propriedade
-matemática que o código não impõe, só herda).
+Gradient, Jacobian, Hessian — the three derivatives Phase 1.1 asked for
+("gradients, Jacobians, Hessians, chain rule") now have their own
+implementation, validated by three independent oracles that never
+agree by accident: `torch.autograd` (an entire other autodiff engine),
+central finite differences (the definition of the derivative, no engine at
+all), and — in the Hessian's case — Schwarz's theorem (a
+mathematical property the code doesn't impose, only inherits).
 
 ---
 
-## O capstone: regressão logística, do zero, contra o sklearn
+## The capstone: logistic regression, from scratch, against sklearn
 
-Última peça do motor: `sum()`, a redução que faltava pra fazer produto
-escalar entre um vetor de pesos e um vetor de features —
-$z = \sum_i w_i x_i + b$ — sem ela, não havia como colapsar oito
-contribuições numa saída escalar única. Como toda peça deste módulo, o
-gradiente de `sum()` é simples e mecânico: $\partial(\sum_i x_i)/\partial
-x_i = 1$ para todo $i$, o gradiente de saída se espalha igual de volta
-pra cada elemento que entrou na soma.
+The engine's last piece: `sum()`, the reduction that was missing to compute the
+dot product between a weight vector and a feature vector —
+$z = \sum_i w_i x_i + b$ — without it, there was no way to collapse eight
+contributions into a single scalar output. Like every piece in this module, the
+gradient of `sum()` is simple and mechanical: $\partial(\sum_i x_i)/\partial
+x_i = 1$ for every $i$, the output gradient spreads back equally to
+every element that went into the sum.
 
-Com `sum()`, `log()`, `exp()` e `SGD`, a regressão logística inteira —
-sigmoide, perda de entropia cruzada, laço de treino — é construída por
-composição, sem nenhuma primitiva nova. `sigmoid(z) = 1/(1+exp(-z))` e a
-perda usam só o que já existia. Esse é o argumento de composicionalidade
-do módulo levado até o fim: seis primitivas (`+`, `*`, `pow`, `exp`,
-`log`, `sum`) bastam pra treinar um classificador de verdade.
+With `sum()`, `log()`, `exp()`, and `SGD`, the entire logistic regression —
+sigmoid, cross-entropy loss, training loop — is built by
+composition, with no new primitive. `sigmoid(z) = 1/(1+exp(-z))` and the
+loss use only what already existed. This is the module's compositionality
+argument carried through to the end: six primitives (`+`, `*`, `pow`, `exp`,
+`log`, `sum`) are enough to train a real classifier.
 
-### O teste que prova que o motor funciona, não só que compila
+### The test that proves the engine works, not just that it compiles
 
-Treinado nos dados HVI reais do Módulo 0 — 180 fardos de treino, rótulo
-sintético "premium" via combinação linear de resistência, uniformidade,
-comprimento e impureza mais ruído gaussiano (um limiar linear com
-sobreposição de classes real, não um problema trivialmente separável) —
-o modelo bateu **exatamente** a acurácia de teste do
-`sklearn.linear_model.LogisticRegression` no mesmo split (0.7143 nos
-dois), e os pesos aprendidos ficaram próximos coeficiente a coeficiente:
+Trained on Module 0's real HVI data — 180 training bales, a synthetic
+"premium" label via a linear combination of strength, uniformity,
+length, and trash plus Gaussian noise (a linear threshold with
+real class overlap, not a trivially separable problem) —
+the model matched `sklearn.linear_model.LogisticRegression`'s test
+accuracy **exactly** on the same split (0.7143 for both), and the
+learned weights came out close, coefficient by coefficient:
 
-| Feature | Nosso peso | Peso do sklearn |
+| Feature | Our weight | sklearn's weight |
 |---|---|---|
 | strength | 0.779 | 0.895 |
 | uniformity | 0.647 | 0.699 |
 | uhml | 0.633 | 0.608 |
 | trash | -0.665 | -0.752 |
 
-As pequenas diferenças vêm do otimizador: nosso SGD puro, full-batch, 120
-passos; o `sklearn` usa L-BFGS com regularização L2 leve por padrão — dois
-caminhos de otimização diferentes convergindo pra perto do mesmo mínimo,
-porque o problema é bem-condicionado o suficiente pra isso importar pouco.
+The small differences come from the optimizer: our plain, full-batch SGD, 120
+steps; `sklearn` uses L-BFGS with light L2 regularization by default — two
+different optimization paths converging near the same minimum,
+because the problem is well-conditioned enough for that to matter little.
 
-Isso fecha o argumento central do módulo inteiro: um motor de ~200 linhas,
-validado peça por peça contra `torch`, diferenças finitas centrais, e
-propriedades matemáticas (Schwarz, teorema de Rayleigh), compõe um sistema
-que treina um modelo real e generaliza tão bem quanto uma biblioteca de
-produção — não por coincidência, mas porque cada peça foi provada correta
-antes de compor a próxima.
+This closes the whole module's central argument: a ~200-line engine,
+validated piece by piece against `torch`, central finite differences, and
+mathematical properties (Schwarz, the Rayleigh theorem), composes a system
+that trains a real model and generalizes as well as a production
+library — not by coincidence, but because each piece was proven correct
+before composing the next.

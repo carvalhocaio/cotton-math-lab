@@ -14,9 +14,9 @@ def _hvi_sample():
 
 
 def _ill_conditioned_matrix(seed: int = 7, n: int = 300, eps: float = 1e-8):
-    """Colunas quase duplicadas: cond(X) ~ 2e8 — a mesma colinearidade que
-    aparece entre features HVI correlacionadas (ex: uhml/uniformity), só
-    que amplificada para tornar o efeito visível em double precision."""
+    """Nearly duplicated columns: cond(X) ~ 2e8 — the same collinearity
+    that shows up between correlated HVI features (e.g. uhml/uniformity),
+    just amplified to make the effect visible in double precision."""
     rng = np.random.default_rng(seed)
     base = rng.standard_normal((n, 3))
     duplicate = base[:, 0] + eps * rng.standard_normal(n)
@@ -45,7 +45,7 @@ def test_components_are_orthonormal():
 
 @pytest.mark.oracle
 def test_agrees_with_covariance_route_when_well_conditioned():
-    """As duas rotas concordam quando não há colinearidade extrema."""
+    """Both routes agree when there's no extreme collinearity."""
     bales, _ = _hvi_sample()
     _, ev_cov, _, _ = pca_via_covariance(bales)
     _, ev_svd, _, _ = pca_via_svd(bales)
@@ -54,8 +54,8 @@ def test_agrees_with_covariance_route_when_well_conditioned():
 
 @pytest.mark.oracle
 def test_svd_route_stays_accurate_on_ill_conditioned_data():
-    """O teste que prova o trade-off: SVD não perde o menor componente
-    mesmo quando as colunas são quase colineares."""
+    """The test that proves the trade-off: SVD doesn't lose the
+    smallest component even when columns are nearly collinear."""
     matrix = _ill_conditioned_matrix()
     _, explained_variance, _, _ = pca_via_svd(matrix)
 
@@ -69,9 +69,9 @@ def test_svd_route_stays_accurate_on_ill_conditioned_data():
 
 @pytest.mark.unit
 def test_covariance_route_loses_smallest_component_on_ill_conditioned_data():
-    """O contraponto: a mesma matriz quebra a rota via covariância. Não é
-    bug — é o número de condição ao quadrado consumindo a precisão de
-    double. Se este teste falhar, o trade-off do doc ficou desatualizado."""
+    """The counterpoint: the same matrix breaks the covariance route.
+    Not a bug — it's the squared condition number consuming double
+    precision. If this test fails, the doc's trade-off has gone stale."""
     matrix = _ill_conditioned_matrix()
     _, explained_variance, _, _ = pca_via_covariance(matrix)
 
@@ -80,4 +80,4 @@ def test_covariance_route_loses_smallest_component_on_ill_conditioned_data():
     reference = (singular_values**2) / (len(matrix) - 1)
 
     relative_error = abs(explained_variance[-1] - reference[-1]) / reference[-1]
-    assert relative_error > 0.5  # essencialmente perdeu o sinal
+    assert relative_error > 0.5  # essentially lost the signal

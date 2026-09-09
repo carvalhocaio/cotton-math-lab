@@ -1,12 +1,12 @@
-"""Entropia, cross-entropy e divergência KL — estimadores discretos."""
+"""Entropy, cross-entropy, and KL divergence — discrete estimators."""
 
 import numpy as np
 
 
 def entropy_discrete(p: np.ndarray, base: float | None = None) -> float:
-    """H(p) = -Σ p(x)·log p(x). Convenção: 0·log(0) := 0 (o limite existe
-    e vale 0, então categorias de probabilidade zero simplesmente não
-    contribuem, em vez de gerar log(0) = -∞)."""
+    """H(p) = -Σ p(x)·log p(x). Convention: 0·log(0) := 0 (the limit
+    exists and equals 0, so zero-probability categories simply don't
+    contribute, instead of producing log(0) = -∞)."""
     p = np.asarray(p, dtype=np.float64)
     p = p[p > 0]
     h = -np.sum(p * np.log(p))
@@ -16,8 +16,8 @@ def entropy_discrete(p: np.ndarray, base: float | None = None) -> float:
 
 
 def cross_entropy_discrete(p: np.ndarray, q: np.ndarray) -> float:
-    """H(p,q) = -Σ p(x)·log q(x) — o custo médio de codificar amostras de
-    p usando um código otimizado para q."""
+    """H(p,q) = -Σ p(x)·log q(x) — the average cost of encoding samples
+    from p using a code optimized for q."""
     p = np.asarray(p, dtype=np.float64)
     q = np.asarray(q, dtype=np.float64)
     mask = p > 0
@@ -25,9 +25,9 @@ def cross_entropy_discrete(p: np.ndarray, q: np.ndarray) -> float:
 
 
 def kl_divergence_discrete(p: np.ndarray, q: np.ndarray) -> float:
-    """D_KL(p‖q) = Σ p(x)·log(p(x)/q(x)) = H(p,q) - H(p) — o custo EXTRA
-    de usar o código de q em vez do código ótimo de p. Sempre ≥ 0
-    (desigualdade de Gibbs), zero se e somente se p = q."""
+    """D_KL(p‖q) = Σ p(x)·log(p(x)/q(x)) = H(p,q) - H(p) — the EXTRA
+    cost of using q's code instead of p's optimal code. Always ≥ 0
+    (Gibbs' inequality), zero if and only if p = q."""
     p = np.asarray(p, dtype=np.float64)
     q = np.asarray(q, dtype=np.float64)
     mask = p > 0

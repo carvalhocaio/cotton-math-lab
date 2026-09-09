@@ -31,9 +31,10 @@ def test_adamw_trajectory_matches_torch():
 
 
 def _build_history_then_observe_pure_decay(optimizer_cls, weight_decay, **kwargs):
-    """Duas fases: primeiro constrói históricos de v MUITO diferentes pra
-    dois parâmetros (um recebe gradiente 10.000× maior que o outro); depois
-    zera o gradiente real e observa só o efeito do weight decay."""
+    """Two phases: first builds VERY different v histories for two
+    parameters (one receives a 10,000× larger gradient than the other);
+    then zeroes the real gradient and observes only the weight decay
+    effect."""
     a, b = Tensor(2.0), Tensor(2.0)
     optimizer = optimizer_cls([a, b], lr=0.05, weight_decay=weight_decay, **kwargs)
 
@@ -57,19 +58,21 @@ def _build_history_then_observe_pure_decay(optimizer_cls, weight_decay, **kwargs
 
 @pytest.mark.unit
 def test_adamw_decay_is_uniform_regardless_of_gradient_history():
-    """O ponto central do ciclo: com AdamW, dois parâmetros com histórico
-    de gradiente radicalmente diferente decaem na MESMA proporção — o
-    weight decay não é distorcido pela escala adaptativa do Adam."""
+    """The cycle's central point: with AdamW, two parameters with
+    radically different gradient histories decay by the SAME
+    proportion — weight decay isn't distorted by Adam's adaptive
+    scaling."""
     decay_a, decay_b = _build_history_then_observe_pure_decay(AdamW, weight_decay=0.1)
     assert abs(decay_a - decay_b) < 0.01
 
 
 @pytest.mark.unit
 def test_naive_l2_in_gradient_makes_decay_depend_on_history():
-    """O contraponto que prova por que AdamW existe: somando L2 ao
-    gradiente ANTES do Adam processar (a forma ingênua de 'Adam + weight
-    decay'), a mesma força nominal produz decaimento bem diferente entre
-    os dois parâmetros — o histórico de v distorce a regularização."""
+    """The counterpoint that proves why AdamW exists: adding L2 to the
+    gradient BEFORE Adam processes it (the naive form of "Adam + weight
+    decay"), the same nominal strength produces very different decay
+    between the two parameters — the v history distorts the
+    regularization."""
 
     class AdamWithL2InGradient:
         def __init__(

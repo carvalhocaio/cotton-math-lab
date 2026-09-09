@@ -1,4 +1,4 @@
-"""Bootstrap: intervalos de confiança sem assumir forma fechada nenhuma."""
+"""Bootstrap: confidence intervals without assuming any closed form."""
 
 from collections.abc import Callable
 
@@ -13,13 +13,14 @@ def bootstrap_confidence_interval(
     confidence: float = 0.95,
     seed: int,
 ) -> tuple[float, float]:
-    """Intervalo de confiança por bootstrap percentil.
+    """Percentile bootstrap confidence interval.
 
-    Reamostra `data` COM reposição `n_resamples` vezes, calcula `statistic`
-    em cada reamostra, e devolve os percentis (α/2, 1-α/2) da distribuição
-    resultante. Não assume nenhuma forma paramétrica para `statistic` —
-    funciona para a média, mas também para mediana, correlação, razão de
-    variâncias, ou qualquer estatística sem fórmula fechada de erro-padrão.
+    Resamples `data` WITH replacement `n_resamples` times, computes
+    `statistic` on each resample, and returns the (α/2, 1-α/2)
+    percentiles of the resulting distribution. Assumes no parametric
+    form for `statistic` — it works for the mean, but also for the
+    median, correlation, variance ratio, or any statistic without a
+    closed-form standard error.
     """
     rng = np.random.default_rng(seed)
     n = len(data)

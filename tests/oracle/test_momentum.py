@@ -6,8 +6,9 @@ from cotton_math_lab.autodiff.tensor import Tensor
 
 
 def _ill_conditioned_quadratic_loss(x: Tensor, y: Tensor) -> Tensor:
-    """f(x,y) = x² + 10y² — curvatura 2 em x, 20 em y: a mesma assinatura
-    geométrica que motiva momentum (e, adiante, Adam) a existir."""
+    """f(x,y) = x² + 10y² — curvature 2 in x, 20 in y: the same
+    geometric signature that motivates momentum (and, later, Adam) to
+    exist."""
     return x**2 + y**2 * 10.0
 
 
@@ -37,8 +38,8 @@ def test_momentum_trajectory_matches_torch():
 
 @pytest.mark.unit
 def test_momentum_beats_sgd_when_learning_rate_is_well_tuned():
-    """Numa janela de lr bem ajustada, Momentum converge muito mais rápido
-    que SGD pura na mesma superfície mal-condicionada."""
+    """Within a well-tuned lr window, Momentum converges much faster
+    than plain SGD on the same ill-conditioned surface."""
 
     def run(optimizer_cls, **kwargs):
         x, y = Tensor(3.0), Tensor(3.0)
@@ -58,9 +59,9 @@ def test_momentum_beats_sgd_when_learning_rate_is_well_tuned():
 
 @pytest.mark.unit
 def test_momentum_can_be_less_stable_then_sgd_at_higher_lr():
-    """O contraponto honesto: perto do limite de estabilidade, Momentum
-    pode ficar PIOR que SGD puro - ele amplia o passo efetivo, então o
-    mesmo lr que o SGD ainda tolera pode já desestabilizar o Momentum."""
+    """The honest counterpoint: near the stability limit, Momentum can
+    end up WORSE than plain SGD - it amplifies the effective step, so
+    an lr that SGD still tolerates can already destabilize Momentum."""
 
     def run(optimizer_cls, **kwargs):
         x, y = Tensor(3.0), Tensor(3.0)

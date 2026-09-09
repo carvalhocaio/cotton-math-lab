@@ -54,5 +54,5 @@ def test_singular_values_returned_in_descending_order():
 def test_raises_when_fewer_rows_than_columns():
     from cotton_math_lab.exceptions import LinAlgError
 
-    with pytest.raises(LinAlgError, match="linhas"):
+    with pytest.raises(LinAlgError, match="rows"):
         svd_jacobi_one_sided(_random_matrix(3, 5, seed=5))

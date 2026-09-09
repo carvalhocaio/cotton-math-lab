@@ -1,64 +1,64 @@
-# 01 — Álgebra Linear
+# 01 — Linear Algebra
 
 ## Power Iteration
 
-Itera
+Iterates
 
 $$
 v_{k+1} = \frac{Av_k}{\lVert Av_k \rVert}.
 $$
 
-O autovalor é estimado pelo quociente de Rayleigh
+The eigenvalue is estimated by the Rayleigh quotient
 
 $$
 \lambda = \frac{v^\top A v}{v^\top v},
 $$
 
-que, para vetores normalizados, reduz-se a $v^\top A v$.
+which, for normalized vectors, reduces to $v^\top A v$.
 
-### Por que converge, e a que velocidade?
+### Why does it converge, and at what speed?
 
-O método converge porque o vetor inicial pode ser escrito como uma combinação linear dos autovetores da matriz. Se $A$ possui autovetores $v_1, v_2, \ldots, v_n$, então
+The method converges because the initial vector can be written as a linear combination of the matrix's eigenvectors. If $A$ has eigenvectors $v_1, v_2, \ldots, v_n$, then
 
 $$
 v_0 = c_1v_1 + c_2v_2 + \cdots + c_nv_n.
 $$
 
-Ao multiplicar sucessivamente por $A$, cada componente é escalada pelo seu respectivo autovalor:
+Multiplying successively by $A$, each component is scaled by its respective eigenvalue:
 
 $$
 A^k v_0 = c_1\lambda_1^k v_1 + c_2\lambda_2^k v_2 + \cdots + c_n\lambda_n^k v_n.
 $$
 
-Se $|\lambda_1| > |\lambda_2| \geq \cdots$, a componente associada ao maior autovalor cresce relativamente mais rápido que as demais. Após cada normalização, as componentes menores tornam-se cada vez menos significativas, fazendo com que o vetor iterado se aproxime do autovetor dominante.
+If $|\lambda_1| > |\lambda_2| \geq \cdots$, the component associated with the largest eigenvalue grows relatively faster than the others. After each normalization, the smaller components become progressively less significant, causing the iterated vector to approach the dominant eigenvector.
 
-A velocidade dessa convergência é geométrica e depende da razão
+The speed of this convergence is geometric and depends on the ratio
 
 $$
 \left|\frac{\lambda_2}{\lambda_1}\right|.
 $$
 
-Quanto menor essa razão, mais rapidamente o erro diminui a cada iteração. Isso explica o conceito de **gap espectral**: quando existe uma grande diferença entre o maior e o segundo maior autovalor em módulo, a convergência é muito mais rápida. Esse comportamento é exatamente o observado no teste `test_converges_faster_with_larger_spectral_gap`, em que matrizes com maior separação entre os autovalores convergem em menos iterações.
+The smaller this ratio, the faster the error shrinks at each iteration. This explains the concept of a **spectral gap**: when there's a large difference between the largest and second-largest eigenvalue in magnitude, convergence is much faster. This behavior is exactly what's observed in the `test_converges_faster_with_larger_spectral_gap` test, where matrices with greater separation between eigenvalues converge in fewer iterations.
 
-### Por que o quociente de Rayleigh é quadraticamente preciso?
+### Why is the Rayleigh quotient quadratically accurate?
 
-Observação numérica (do protótipo): com $A$ simétrica $6 \times 6$, o erro do **autovalor** ficou em aproximadamente $10^{-11}$ enquanto o resíduo $\lVert Av - \lambda v \rVert$ (governado pelo erro do **autovetor**) ficou em aproximadamente $10^{-5}$.
+Numerical observation (from the prototype): with a symmetric $6 \times 6$ $A$, the **eigenvalue** error was around $10^{-11}$ while the residual $\lVert Av - \lambda v \rVert$ (governed by the **eigenvector** error) was around $10^{-5}$.
 
-Fato: o autovalor converge em $O(\varepsilon^2)$, enquanto o autovetor converge em $O(\varepsilon)$.
+Fact: the eigenvalue converges at $O(\varepsilon^2)$, while the eigenvector converges at $O(\varepsilon)$.
 
-O quociente de Rayleigh possui uma propriedade importante: o erro na estimativa do autovalor é de segunda ordem em relação ao erro do autovetor.
+The Rayleigh quotient has an important property: the error in the eigenvalue estimate is second order relative to the eigenvector error.
 
-Se o vetor aproximado é escrito como
+If the approximate vector is written as
 
 $$
 v = v^* + \varepsilon u,
 $$
 
-onde $v^*$ é o autovetor verdadeiro e $\varepsilon$ representa um pequeno erro, a correção de primeira ordem do quociente de Rayleigh desaparece. Isso ocorre porque o autovetor verdadeiro é um ponto estacionário do quociente de Rayleigh, fazendo com que apenas termos proporcionais a $\varepsilon^2$ permaneçam.
+where $v^*$ is the true eigenvector and $\varepsilon$ represents a small error, the first-order correction of the Rayleigh quotient vanishes. This happens because the true eigenvector is a stationary point of the Rayleigh quotient, so only terms proportional to $\varepsilon^2$ remain.
 
-**A prova**, para fechar o argumento sem deixar como afirmação solta:
+**The proof**, to close the argument without leaving it as a loose claim:
 
-Seja $v = v^* + \varepsilon u$, com $u \perp v^*$ e $\lVert v^* \rVert = 1$. Então
+Let $v = v^* + \varepsilon u$, with $u \perp v^*$ and $\lVert v^* \rVert = 1$. Then
 
 $$
 R(v) = \frac{v^\top A v}{v^\top v}
@@ -66,56 +66,55 @@ R(v) = \frac{v^\top A v}{v^\top v}
        {1 + \varepsilon^2 \lVert u \rVert^2}.
 $$
 
-Como $v^*$ é autovetor, $Av^* = \lambda^* v^*$, e como $u \perp v^*$, o termo
-cruzado se anula exatamente:
+Since $v^*$ is an eigenvector, $Av^* = \lambda^* v^*$, and since $u \perp v^*$, the cross term vanishes exactly:
 
 $$
 2\varepsilon u^\top A v^* = 2\varepsilon \lambda^* (u^\top v^*) = 0.
 $$
 
-Não é uma aproximação — é uma identidade que vale para qualquer $\varepsilon$.
-Sobra apenas
+It's not an approximation — it's an identity that holds for any $\varepsilon$.
+What's left is just
 
 $$
 R(v) = \lambda^* + \varepsilon^2\left(u^\top A u - \lambda^* \lVert u \rVert^2\right) + O(\varepsilon^4).
 $$
 
-O termo de primeira ordem em $\varepsilon$ nunca existiu: ele desaparece porque
-$v^*$ é ponto estacionário do quociente de Rayleigh, não por coincidência
-numérica. É essa identidade que garante, de primeiros princípios, que um erro
-$O(\varepsilon)$ no autovetor produz um erro $O(\varepsilon^2)$ no autovalor.
+The first-order term in $\varepsilon$ never existed: it vanishes because
+$v^*$ is a stationary point of the Rayleigh quotient, not by numerical
+coincidence. It's this identity that guarantees, from first principles, that an
+$O(\varepsilon)$ error in the eigenvector produces an $O(\varepsilon^2)$ error in the eigenvalue.
 
-Como consequência, enquanto o erro do autovetor é da ordem de
+As a consequence, while the eigenvector error is of order
 
 $$
 O(\varepsilon),
 $$
 
-o erro do autovalor é da ordem de
+the eigenvalue error is of order
 
 $$
 O(\varepsilon^2).
 $$
 
-Esse comportamento explica a observação experimental: mesmo com um resíduo em torno de $10^{-5}$, o erro do autovalor já atingia aproximadamente $10^{-11}$. Na prática, isso significa que uma aproximação razoável do autovetor já produz uma estimativa extremamente precisa do autovalor. Essa é uma das principais razões pelas quais o quociente de Rayleigh é amplamente utilizado em algoritmos para cálculo de autovalores.
+This behavior explains the experimental observation: even with a residual around $10^{-5}$, the eigenvalue error already reached around $10^{-11}$. In practice, this means a reasonably good approximation of the eigenvector already produces an extremely precise estimate of the eigenvalue. This is one of the main reasons the Rayleigh quotient is widely used in eigenvalue computation algorithms.
 
 ---
 
-## Deflação de Hotelling
+## Hotelling Deflation
 
-Após extrair $(\lambda_1, v_1)$, constrói-se
+After extracting $(\lambda_1, v_1)$, one constructs
 
 $$
 A' = A - \lambda_1 v_1v_1^\top.
 $$
 
-Em seguida, aplica-se novamente o método da potência.
+Then the power method is applied again.
 
-### Por que funciona?
+### Why does it work?
 
-A matriz $v_1v_1^\top$ representa a projeção sobre a direção do primeiro autovetor. Ao multiplicá-la por $\lambda_1$ e subtrair esse termo de $A$, elimina-se exatamente a contribuição correspondente ao autovalor dominante.
+The matrix $v_1v_1^\top$ represents the projection onto the direction of the first eigenvector. Multiplying it by $\lambda_1$ and subtracting that term from $A$ exactly eliminates the contribution corresponding to the dominant eigenvalue.
 
-De fato,
+Indeed,
 
 $$
 \begin{aligned}
@@ -126,15 +125,15 @@ A'v_1
 \end{aligned}
 $$
 
-Assim, o primeiro autovalor passa a ser zero.
+So the first eigenvalue becomes zero.
 
-Para qualquer outro autovetor $v_i$, como a matriz é simétrica, seus autovetores são ortogonais entre si. Portanto,
+For any other eigenvector $v_i$, since the matrix is symmetric, its eigenvectors are orthogonal to each other. Therefore,
 
 $$
 v_1^\top v_i = 0.
 $$
 
-Logo,
+Hence,
 
 $$
 \begin{aligned}
@@ -144,191 +143,190 @@ A'v_i
 \end{aligned}
 $$
 
-Ou seja, os demais autovalores e autovetores permanecem inalterados. Dessa forma, o próximo maior autovalor torna-se dominante, permitindo sua extração pela próxima execução do método da potência.
+In other words, the remaining eigenvalues and eigenvectors stay unchanged. This way, the next-largest eigenvalue becomes dominant, allowing its extraction by the next run of the power method.
 
-### O trade-off honesto: por que você NÃO usaria isso na prática
+### The honest trade-off: why you would NOT use this in practice
 
-Observação numérica: no protótipo, os autovalores bateram o NumPy até $10^{-14}$, mas a ortogonalidade dos autovetores recuperados caiu para aproximadamente $10^{-7}$ — os últimos vetores são visivelmente menos precisos que os primeiros.
+Numerical observation: in the prototype, the eigenvalues matched NumPy up to $10^{-14}$, but the orthogonality of the recovered eigenvectors dropped to around $10^{-7}$ — the last vectors are noticeably less accurate than the first ones.
 
-Embora a deflação de Hotelling funcione muito bem para matrizes pequenas, ela apresenta um problema importante: os erros numéricos acumulam-se a cada etapa.
+Although Hotelling deflation works very well for small matrices, it has an important problem: numerical errors accumulate at each step.
 
-Na prática, o primeiro autovetor nunca é calculado exatamente. Assim, a matriz de deflação é construída utilizando uma aproximação de $v_1$. Como consequência, a contribuição do primeiro autovalor não é removida de forma perfeita, introduzindo pequenos erros na nova matriz. Esses erros passam a influenciar o cálculo do segundo autovetor, que por sua vez gera uma nova deflação também imperfeita. Esse processo continua sucessivamente, acumulando erros ao longo das iterações.
+In practice, the first eigenvector is never computed exactly. So the deflation matrix is built using an approximation of $v_1$. As a consequence, the first eigenvalue's contribution isn't removed perfectly, introducing small errors into the new matrix. These errors go on to influence the computation of the second eigenvector, which in turn generates a new, also imperfect, deflation. This process continues successively, accumulating errors over the iterations.
 
-Esse fenômeno explica por que, no protótipo, os autovalores continuaram extremamente precisos (erro próximo de $10^{-14}$), enquanto a ortogonalidade dos autovetores recuperados caiu para aproximadamente $10^{-7}$. Os últimos autovetores acabam sendo significativamente menos precisos que os primeiros.
+This phenomenon explains why, in the prototype, the eigenvalues remained extremely precise (error close to $10^{-14}$), while the orthogonality of the recovered eigenvectors dropped to around $10^{-7}$. The last eigenvectors end up significantly less precise than the first ones.
 
-Em matrizes pequenas, como uma matriz $6 \times 6$, esse efeito é praticamente irrelevante. Entretanto, em problemas reais envolvendo milhares de dimensões, o acúmulo de erros pode comprometer seriamente a qualidade dos autovetores obtidos.
+In small matrices, like a $6 \times 6$ matrix, this effect is practically irrelevant. However, in real problems involving thousands of dimensions, the accumulation of errors can seriously compromise the quality of the eigenvectors obtained.
 
-Por esse motivo, a deflação sequencial é raramente utilizada em aplicações de grande porte. Na prática, emprega-se o algoritmo QR, que realiza transformações ortogonais de similaridade preservando simultaneamente toda a estrutura espectral da matriz. Como essas transformações mantêm a ortogonalidade de forma muito mais estável numericamente, o algoritmo QR evita o acúmulo progressivo de erros observado na deflação de Hotelling e produz todos os autovalores e autovetores com alta precisão.
+For this reason, sequential deflation is rarely used in large-scale applications. In practice, the QR algorithm is used, which performs orthogonal similarity transformations while simultaneously preserving the matrix's entire spectral structure. Since these transformations maintain orthogonality in a much more numerically stable way, the QR algorithm avoids the progressive accumulation of errors seen in Hotelling deflation and produces all eigenvalues and eigenvectors with high precision.
 
 ---
 
-## Decomposição QR: Gram-Schmidt vs. Householder
+## QR Decomposition: Gram-Schmidt vs. Householder
 
-Toda matriz $A \in \mathbb{R}^{m\times n}$ ($m \geq n$, colunas linearmente
-independentes) se decompõe como $A = QR$, com $Q$ de colunas ortonormais e
-$R$ triangular superior. Os dois métodos abaixo chegam no mesmo resultado
-teórico por caminhos numericamente muito diferentes.
+Every matrix $A \in \mathbb{R}^{m\times n}$ ($m \geq n$, linearly
+independent columns) decomposes as $A = QR$, with $Q$ having orthonormal columns and
+$R$ upper triangular. The two methods below reach the same theoretical result via
+numerically very different paths.
 
-### Gram-Schmidt clássico
+### Classic Gram-Schmidt
 
-Constrói $Q$ coluna a coluna: a $j$-ésima coluna de $A$ tem removida sua
-projeção sobre todas as colunas anteriores de $Q$, e o resultado é
-normalizado.
+Builds $Q$ column by column: the $j$-th column of $A$ has its
+projection onto all previous columns of $Q$ removed, and the result is
+normalized.
 
 $$
 v_j = a_j - \sum_{i < j} (q_i^\top a_j) q_i, \qquad q_j = \frac{v_j}{\lVert v_j \rVert}
 $$
 
-O problema não é a fórmula — é a aritmética de ponto flutuante. Quando duas
-colunas de $A$ são quase paralelas, $v_j$ é uma **diferença entre duas
-quantidades quase iguais** ($a_j$ e sua projeção). Esse tipo de subtração é o
-caso clássico de *cancelamento catastrófico*: os dígitos significativos que
-sobram depois da subtração vêm majoritariamente do erro de arredondamento de
-cada termo, não do sinal real. O erro de uma projeção contamina a próxima
-coluna, que contamina a seguinte — e a ortogonalidade de $Q$ degrada de forma
-acumulativa e silenciosa, sem que a fatoração pareça "quebrada": $QR$ ainda
-reconstrói $A$ com precisão de máquina, só $Q$ deixa de ser ortogonal de
-verdade.
+The problem isn't the formula — it's floating-point arithmetic. When two
+columns of $A$ are nearly parallel, $v_j$ is a **difference between two
+nearly equal quantities** ($a_j$ and its projection). This kind of subtraction is the
+classic case of *catastrophic cancellation*: the significant digits that
+remain after the subtraction come mostly from the rounding error of
+each term, not from the real signal. The error from one projection contaminates the next
+column, which contaminates the next one — and $Q$'s orthogonality degrades
+cumulatively and silently, without the factorization ever looking "broken": $QR$ still
+reconstructs $A$ to machine precision, only $Q$ stops being truly orthogonal.
 
-O fixture do teste torna isso concreto: com três colunas quase paralelas
-(diferença de $10^{-7}$ entre elas), o erro de ortogonalidade de $Q$ salta de
-precisão de máquina para $\approx 1.9\times10^{-2}$ — quatro ordens de
-grandeza de degradação, e a matriz de teste nem é patologicamente extrema.
+The test fixture makes this concrete: with three nearly parallel columns
+(a difference of $10^{-7}$ between them), $Q$'s orthogonality error jumps from
+machine precision to $\approx 1.9\times10^{-2}$ — four orders of
+magnitude of degradation, and the test matrix isn't even pathologically extreme.
 
-### Reflexões de Householder
+### Householder Reflections
 
-Em vez de projetar e subtrair, cada passo aplica uma **reflexão ortogonal**
-$H = I - 2vv^\top$ (com $\lVert v \rVert = 1$) escolhida para zerar tudo
-abaixo da diagonal na coluna atual.
+Instead of projecting and subtracting, each step applies an **orthogonal reflection**
+$H = I - 2vv^\top$ (with $\lVert v \rVert = 1$) chosen to zero out everything
+below the diagonal in the current column.
 
-A diferença estrutural é o que importa: uma reflexão de Householder é uma
-**isometria exata por construção** — preserva norma e ângulo entre quaisquer
-vetores, não como resultado de uma conta bem-sucedida, mas porque
-$H^\top H = I$ é uma identidade algébrica, verdadeira a cada passo
-independentemente de quão mal-condicionada a matriz de entrada seja. Não há
-subtração de quantidades quase iguais escondida no processo — o cancelamento
-catastrófico simplesmente não tem onde acontecer.
+The structural difference is what matters: a Householder reflection is an
+**exact isometry by construction** — it preserves the norm and angle between any
+vectors, not as the result of a successful calculation, but because
+$H^\top H = I$ is an algebraic identity, true at every step
+regardless of how ill-conditioned the input matrix is. There's no
+subtraction of nearly equal quantities hidden in the process — catastrophic
+cancellation simply has nowhere to happen.
 
-O mesmo fixture prova isso: erro de ortogonalidade $\approx 1.4\times10^{-15}$,
-precisão de máquina, na mesma matriz onde o Gram-Schmidt clássico falhou.
+The same fixture proves this: orthogonality error $\approx 1.4\times10^{-15}$,
+machine precision, on the same matrix where classic Gram-Schmidt failed.
 
-### O padrão que já apareceu antes
+### The pattern that already showed up before
 
-Esta é a mesma estrutura de trade-off da deflação de Hotelling, e vale
-nomear o padrão geral: **métodos que operam por diferenças sucessivas (GS,
-deflação) acumulam erro de arredondamento a cada passo; métodos que operam
-por transformações exatamente ortogonais a cada passo (Householder, e o
-algoritmo QR que segue) não acumulam, porque cada passo é uma
-isometria por definição, não por sorte numérica.**
+This is the same trade-off structure as Hotelling deflation, and it's worth
+naming the general pattern: **methods that operate via successive differences (GS,
+deflation) accumulate rounding error at each step; methods that operate
+via exactly orthogonal transformations at each step (Householder, and the
+QR algorithm that follows) don't accumulate error, because each step is an
+isometry by definition, not by numerical luck.**
 
-Isso não é coincidência de dois exemplos — é o critério de estabilidade
-numérica que separa "método didático" de "método de produção" em quase toda
-álgebra linear numérica: prefira transformações ortogonais as projeções
-sempre que a estabilidade importar mais que a simplicidade da fórmula.
+This isn't a coincidence between two examples — it's the numerical stability
+criterion that separates "textbook method" from "production method" in almost all
+numerical linear algebra: prefer orthogonal transformations over projections
+whenever stability matters more than the simplicity of the formula.
 
-### Consequência prática
+### Practical consequence
 
-Isso é também por que o algoritmo QR para autovalores (próximo ciclo)
-substitui a deflação de Hotelling: ele usa exatamente estas reflexões de
-Householder para reduzir a matriz e depois itera $A_{k+1} = R_k Q_k$
-(fatoração e produto na ordem trocada) sem nunca acumular o erro que a
-deflação sequencial carrega.
+This is also why the QR algorithm for eigenvalues (next cycle)
+replaces Hotelling deflation: it uses exactly these Householder reflections
+to reduce the matrix and then iterates $A_{k+1} = R_k Q_k$
+(factorization and product in swapped order) without ever accumulating the error that
+sequential deflation carries.
 
 ---
 
-## Algoritmo QR: fechando o módulo
+## The QR Algorithm: closing the module
 
-A cada passo, fatora $A_k = Q_k R_k$ e recompõe na ordem trocada:
+At each step, factors $A_k = Q_k R_k$ and recomposes in swapped order:
 $A_{k+1} = R_k Q_k$.
 
-### A identidade que faz tudo funcionar
+### The identity that makes it all work
 
 $$
 A_{k+1} = R_k Q_k = Q_k^\top (Q_k R_k) Q_k = Q_k^\top A_k Q_k.
 $$
 
-Cada passo é uma **transformação de similaridade ortogonal**. Isso importa
-porque similaridade preserva o espectro exatamente: $A_k$ e $A_{k+1}$ têm os
-mesmos autovalores, sempre, para qualquer $k$. O algoritmo não "calcula" os
-autovalores — ele só muda a base em que a matriz é representada, até a base
-escolhida ser aquela em que a matriz já é diagonal. Nessa base, os
-autovalores estão, por definição, na diagonal.
+Each step is an **orthogonal similarity transform**. This matters
+because similarity preserves the spectrum exactly: $A_k$ and $A_{k+1}$ have the
+same eigenvalues, always, for any $k$. The algorithm doesn't "compute" the
+eigenvalues — it just changes the basis in which the matrix is represented, until the
+chosen basis is one in which the matrix is already diagonal. In that
+basis, the eigenvalues are, by definition, on the diagonal.
 
-### O trade-off que amarra os três ciclos do módulo
+### The trade-off tying the module's three cycles together
 
-O algoritmo QR resolve exatamente o problema que a deflação de Hotelling
-tinha: como usa Householder a cada fatoração, não há subtração de
-quantidades quase iguais, não há cancelamento catastrófico, e a
-ortogonalidade dos autovetores recuperados não degrada — o teste
-`test_no_orthogonality_degradation_across_deflation_like_use` prova isso até
-$10^{-8}$ mesmo após reduzir 8 dimensões.
+The QR algorithm solves exactly the problem Hotelling deflation
+had: since it uses Householder at every factorization, there's no
+subtraction of nearly equal quantities, no catastrophic cancellation, and the
+orthogonality of the recovered eigenvectors doesn't degrade — the test
+`test_no_orthogonality_degradation_across_deflation_like_use` proves this to
+$10^{-8}$ even after reducing 8 dimensions.
 
-Mas ele herda, sem disfarce, o problema de velocidade da power iteration.
-Estruturalmente, o QR algorithm é uma **iteração de subespaço simultânea** —
-em vez de perseguir um único autovetor dominante, persegue um subespaço
-inteiro ao mesmo tempo, mas o mecanismo de convergência é o mesmo: geométrico
-na razão $|\lambda_{k+1}/\lambda_k|$ entre autovalores consecutivos. O
-experimento no protótipo tornou isso concreto: gap largo ($\lambda_1{=}10$,
-$\lambda_2{=}1$) convergiu em 32 iterações; o mesmo tamanho de matriz com gap
-estreito ($\lambda_1{=}10$, $\lambda_2{=}9.999$) não convergiu nem em 3000.
+But it inherits, without disguise, power iteration's speed problem.
+Structurally, the QR algorithm is a **simultaneous subspace iteration** —
+instead of chasing a single dominant eigenvector, it chases an entire
+subspace at once, but the convergence mechanism is the same: geometric,
+at the ratio $|\lambda_{k+1}/\lambda_k|$ between consecutive eigenvalues. The
+experiment in the prototype made this concrete: a wide gap ($\lambda_1{=}10$,
+$\lambda_2{=}1$) converged in 32 iterations; the same matrix size with a
+narrow gap ($\lambda_1{=}10$, $\lambda_2{=}9.999$) didn't even converge in 3000.
 
-Não existe almoço grátis aqui: você trocou "impreciso perto do fim do
-espectro" por "lento perto de autovalores próximos". Nenhum dos três métodos
-deste módulo — power iteration, deflação, QR sem shift — escapa de um dos
-dois problemas.
+There's no free lunch here: you traded "imprecise near the end of the
+spectrum" for "slow near close eigenvalues". None of the three methods in
+this module — power iteration, deflation, unshifted QR — escapes one of the
+two problems.
 
-### O que fica de fora, por honestidade
+### What's left out, for honesty's sake
 
-A correção de produção para a lentidão é o **shift de Wilkinson**: subtrair
-de $A_k$ uma estimativa do autovalor mais próximo antes de cada fatoração,
-o que acelera a convergência de linear para cúbica — poucas iterações bastam
-mesmo com gaps estreitos. Fora do escopo deste módulo implementar, mas vale
-registrar que o problema tem solução conhecida, e qual é o princípio dela.
+The production fix for the slowness is the **Wilkinson shift**: subtracting
+an estimate of the closest eigenvalue from $A_k$ before each factorization,
+which speeds up convergence from linear to cubic — a few iterations suffice
+even with narrow gaps. Implementing it is out of this module's scope, but it's
+worth noting that the problem has a known solution, and what its underlying principle is.
 
-### Fechando o ciclo do Módulo 1
+### Closing Module 1's cycle
 
-Três métodos, um só objetivo (autovalores), três trade-offs diferentes:
-power iteration é simples, mas só dá o autovalor dominante; deflação estende
-para o espectro inteiro, mas acumula erro; QR corrige o erro, mas herda a
-lentidão. É exatamente esse tipo de mapa — não "qual método é o melhor", mas
-"qual dor cada método troca por qual outra" — que separa julgar de
-primeiros princípios de decorar qual função chamar.
+Three methods, one goal (eigenvalues), three different trade-offs:
+power iteration is simple, but only gives the dominant eigenvalue; deflation extends
+it to the whole spectrum, but accumulates error; QR fixes the error, but inherits the
+slowness. It's exactly this kind of map — not "which method is best", but
+"which pain each method trades for which other" — that separates judging
+from first principles from memorizing which function to call.
 
 ---
 
-# PCA Aplicado — Fechando o Ciclo com os Dados HVI
+# PCA Applied — Closing the Cycle with HVI Data
 
-Esta seção aplica o `qr_algorithm` do módulo a um problema real: reduzir os
-oito parâmetros HVI a um punhado de componentes que capturam a maior parte
-da variância. É aqui que a matemática abstrata dos três ciclos anteriores
-encontra o gerador sintético do Módulo 0.
+This section applies the module's `qr_algorithm` to a real problem: reducing the
+eight HVI parameters to a handful of components that capture most of
+the variance. This is where the abstract math of the three previous cycles
+meets Module 0's synthetic generator.
 
-## PCA via covariância
+## PCA via covariance
 
 $$
 \Sigma = \frac{1}{n-1} X_c^\top X_c, \qquad X_c = X - \bar{X}
 $$
 
-Os componentes principais são os autovetores de $\Sigma$, ordenados pelo
-autovalor correspondente (a variância explicada por aquela direção). É a
-rota mais direta: forma a matriz de covariância explicitamente e decompõe
-com o `qr_algorithm` já validado no ciclo anterior.
+The principal components are the eigenvectors of $\Sigma$, ordered by the
+corresponding eigenvalue (the variance explained by that direction). It's the
+most direct route: explicitly forms the covariance matrix and decomposes
+it with the `qr_algorithm` already validated in the previous cycle.
 
-## A pegadinha: PCA é sensível à escala das features
+## The gotcha: PCA is sensitive to feature scale
 
-Rodando `pca_via_covariance` sem padronizar nos dados HVI reais (5000
-fardos, seed 2024), o primeiro componente principal saiu quase puro em uma
-única feature:
+Running `pca_via_covariance` without standardizing on the real HVI data (5000
+bales, seed 2024), the first principal component came out almost purely as a
+single feature:
 
-| Feature         | Loading em PC1 (bruto) |
+| Feature         | Loading on PC1 (raw) |
 |-----------------|------------------------|
 | `rd`            | **0.985**              |
 | `plus_b`        | -0.161                 |
-| todas as outras | < 0.05                 |
+| all others | < 0.05                 |
 
-A causa não é correlação — é escala. A variância bruta de cada feature:
+The cause isn't correlation — it's scale. The raw variance of each feature:
 
-| Feature      | Variância bruta |
+| Feature      | Raw variance |
 |--------------|-----------------|
 | `rd`         | 9.07            |
 | `strength`   | 6.12            |
@@ -339,154 +337,154 @@ A causa não é correlação — é escala. A variância bruta de cada feature:
 | `micronaire` | 0.15            |
 | `trash`      | 0.09            |
 
-`rd` tem o maior desvio-padrão (3.0, refletância medida em escala 0–100)
-simplesmente porque a unidade de medida dessa variável produz números
-maiores — não porque ela seja mais informativa que as outras. A matriz de
-covariância mistura escala com correlação, e quando as duas coisas competem,
-**a escala ganha**. PCA sobre covariância bruta não é "PCA errado" — é PCA
-respondendo exatamente à pergunta que foi feita: "qual direção tem mais
-variância em unidades originais", que raramente é a pergunta que você queria
-fazer.
+`rd` has the largest standard deviation (3.0, reflectance measured on a 0–100 scale)
+simply because that variable's unit of measurement produces larger
+numbers — not because it's more informative than the others. The covariance
+matrix mixes scale with correlation, and when the two compete,
+**scale wins**. PCA on raw covariance isn't "wrong PCA" — it's PCA
+answering exactly the question that was asked: "which direction has the most
+variance in original units", which is rarely the question you actually wanted
+to ask.
 
-## A correção: padronizar antes de decompor
+## The fix: standardize before decomposing
 
-Dividindo cada feature pelo seu desvio-padrão antes de formar a matriz
-(`standardize=True`), decompõe-se a matriz de **correlação**, não há de
-covariância. Toda feature passa a contribuir em pé de igualdade — a
-diagonal da matriz de correlação é sempre 1, então o traço é sempre $p$ (o
-número de features), e é exatamente por isso que
-`test_standardized_explained_variance_sums_to_number_of_features` funciona
-como invariante puro, sem precisar de oráculo: a soma dos autovalores de
-qualquer matriz de correlação de 8 features é 8, sempre, por construção.
+Dividing each feature by its standard deviation before forming the matrix
+(`standardize=True`) decomposes the **correlation** matrix, not the
+covariance one. Every feature ends up contributing on equal footing — the
+diagonal of the correlation matrix is always 1, so the trace is always $p$ (the
+number of features), and that's exactly why
+`test_standardized_explained_variance_sums_to_number_of_features` works
+as a pure invariant, with no oracle needed: the sum of the eigenvalues of
+any 8-feature correlation matrix is 8, always, by construction.
 
-Com a padronização, o PC1 deixa de ser refém de `rd` e passa a ser dominado
-por `uhml` — e ao ver as *cargas* completas (não só a dominante), aparece a
-estrutura real: PC1 concentra `uhml`, `uniformity` e `strength` com sinais
-consistentes — o bloco de **qualidade de fibra** que o gerador do Módulo 0
-plantou deliberadamente correlacionado. PC2 concentra `rd`, `plus_b` e
-`trash` — o bloco de **qualidade de cor**. A separação que o dev.to article
-do `cotton-desk-tasks` já intuía no domínio, aqui sai *de graça* da álgebra
-linear, sem qualquer rótulo de classe ou hipótese prévia — é literalmente o
-que "aprendizado não supervisionado" quer dizer.
+With standardization, PC1 stops being hostage to `rd` and becomes dominated
+by `uhml` — and looking at the full *loadings* (not just the dominant one), the
+real structure appears: PC1 concentrates `uhml`, `uniformity`, and `strength` with
+consistent signs — the **fiber quality** block that Module 0's generator
+deliberately planted as correlated. PC2 concentrates `rd`, `plus_b`, and
+`trash` — the **color quality** block. The separation the dev.to article
+for `cotton-desk-tasks` already sensed in the domain comes here *for free* from linear
+algebra, without any class label or prior hypothesis — it's literally
+what "unsupervised learning" means.
 
-## Por que isso importa além deste módulo
+## Why this matters beyond this module
 
-Esta não é uma peculiaridade de PCA. **Qualquer método baseado em distância
-ou produto interno** — k-means, KNN, regularização L2, e o próprio gradiente
-descendente quando features têm escalas muito diferentes (Módulo 4) — sofre
-da mesma sensibilidade. É por isso que `StandardScaler` aparece em
-praticamente todo pipeline de ML como primeira etapa, não por costume, mas
-porque a matemática por trás — covariância, distância euclidiana, norma do
-gradiente — trata "grande em valor numérico" como sinônimo de "importante",
-a menos que você normalize antes.
+This isn't a PCA quirk. **Any method based on distance
+or inner products** — k-means, KNN, L2 regularization, and gradient
+descent itself when features have very different scales (Module 4) — suffers
+from the same sensitivity. That's why `StandardScaler` shows up in
+practically every ML pipeline as a first step, not out of habit, but
+because the math behind it — covariance, Euclidean distance, gradient
+norm — treats "numerically large" as synonymous with "important",
+unless you normalize first.
 
-## Validação
+## Validation
 
-`pca_via_covariance` foi validado contra `numpy.linalg.svd` sobre os dados
-brutos: variância explicada bate até $10^{-14}$, os componentes satisfazem
-$\Sigma v = \lambda v$ até $10^{-12}$, e a ortonormalidade dos componentes
-fica em $10^{-14}$ — a mesma precisão que o `qr_algorithm` já entregava no
-ciclo anterior, como esperado, já que PCA aqui não é nada além de uma
-aplicação direta dele.
+`pca_via_covariance` was validated against `numpy.linalg.svd` on the raw
+data: explained variance matches to $10^{-14}$, the components satisfy
+$\Sigma v = \lambda v$ to $10^{-12}$, and the components' orthonormality
+sits at $10^{-14}$ — the same precision `qr_algorithm` already delivered in
+the previous cycle, as expected, since PCA here is nothing more than a
+direct application of it.
 
 ---
 
-## SVD via Jacobi de um lado
+## One-Sided Jacobi SVD
 
-Em vez de formar $X^\top X$ e decompor essa matriz $p \times p$, este método
-opera diretamente sobre as colunas de $X$ ($n \times p$). A cada passo,
-escolhe duas colunas $(a_i, a_j)$ e aplica uma rotação $2\times2$ que zera
-$\langle a_i, a_j\rangle$ **exatamente**, por construção geométrica — não
-por diferença numérica entre quantidades próximas. Repetindo sobre todos os
-pares (uma "varredura") e repetindo varreduras até convergir, as colunas
-ficam mutuamente ortogonais: a norma de cada uma é o valor singular, a
-direção é a coluna de $U$, e a rotação acumulada é $V$.
+Instead of forming $X^\top X$ and decomposing that $p \times p$ matrix, this method
+operates directly on the columns of $X$ ($n \times p$). At each step,
+it picks two columns $(a_i, a_j)$ and applies a $2\times2$ rotation that zeroes
+$\langle a_i, a_j\rangle$ **exactly**, by geometric construction — not
+by a numerical difference between close quantities. Repeating over all
+pairs (a "sweep") and repeating sweeps until convergence, the columns
+become mutually orthogonal: the norm of each one is the singular value, its
+direction is the column of $U$, and the accumulated rotation is $V$.
 
-O ponto que separa este método do anterior: cada produto interno
-$\langle a_i, a_j \rangle$ é recalculado a cada varredura, a partir das
-colunas já parcialmente refinadas — em nenhum momento os $p(p+1)/2$
-produtos internos de $X^\top X$ são todos calculados de uma vez, antes de
-qualquer refinamento acontecer.
+The point that sets this method apart from the previous one: each inner product
+$\langle a_i, a_j \rangle$ is recomputed at each sweep, from the
+already partially refined columns — at no point are all $p(p+1)/2$
+inner products of $X^\top X$ computed at once, before any
+refinement happens.
 
-## Por que isso importa: o número de condição ao quadrado
+## Why this matters: the squared condition number
 
-Número de condição de uma matriz: $\kappa(X) = \sigma_{\max}(X) /
-\sigma_{\min}(X)$ — o quanto $X$ "estica" o espaço na pior direção
-comparado à melhor. Ele mede o quanto erro de entrada é amplificado na
-saída de qualquer cálculo com $X$.
+Condition number of a matrix: $\kappa(X) = \sigma_{\max}(X) /
+\sigma_{\min}(X)$ — how much $X$ "stretches" space in the worst
+direction compared to the best. It measures how much input error is amplified in the
+output of any computation with $X$.
 
-Os autovalores de $X^\top X$ são $\sigma_i(X)^2$ — é a própria definição de
-valor singular. Logo:
+The eigenvalues of $X^\top X$ are $\sigma_i(X)^2$ — that's the very
+definition of a singular value. Hence:
 
 $$
 \kappa(X^\top X) = \frac{\sigma_{\max}(X)^2}{\sigma_{\min}(X)^2} = \kappa(X)^2
 $$
 
-Formar $X^\top X$ eleva explicitamente** o número de condição ao
-quadrado**, antes mesmo de qualquer algoritmo de decomposição entrar em
-cena. Isso não é uma peculiaridade do `qr_algorithm` — aconteceria com
-qualquer eigensolver, por melhor que fosse, porque o problema já está na
-matriz de entrada, não no método que a decompõe.
+Forming $X^\top X$ explicitly raises the condition number to the
+**square**, even before any decomposition algorithm comes into
+play. This isn't a quirk of `qr_algorithm` — it would happen with
+any eigensolver, no matter how good, because the problem is already in
+the input matrix, not in the method that decomposes it.
 
-A consequência em ponto flutuante: double precision carrega
-$\varepsilon \approx 2.2\times10^{-16}$ de precisão relativa por operação
-(cerca de 16 dígitos decimais). O erro esperado ao resolver um problema de
-autovalores por métodos diretos escala com $\kappa \cdot \varepsilon$. Se
-$\kappa(X) \approx 2\times10^{8}$ (o fixture do teste), então
-$\kappa(X^\top X) \approx 4\times10^{16}$ — **maior que $1/\varepsilon$**.
-Isso significa, literalmente, que não sobram dígitos significativos para
-representar o menor autovalor: ele está abaixo do próprio ruído de
-arredondamento da matriz que o contém.
+The floating-point consequence: double precision carries
+$\varepsilon \approx 2.2\times10^{-16}$ of relative precision per operation
+(about 16 decimal digits). The expected error when solving an
+eigenvalue problem with direct methods scales with $\kappa \cdot \varepsilon$. If
+$\kappa(X) \approx 2\times10^{8}$ (the test fixture), then
+$\kappa(X^\top X) \approx 4\times10^{16}$ — **larger than $1/\varepsilon$**.
+This literally means there are no significant digits left to
+represent the smallest eigenvalue: it sits below the very rounding
+noise of the matrix that contains it.
 
-## A prova, com números medidos
+## The proof, with measured numbers
 
-Na mesma matriz mal-condicionada ($\kappa(X) \approx 2\times10^8$, três
-colunas quase duplicadas — o tipo de colinearidade que aparece de verdade
-entre features HVI correlacionadas, como `uhml` e `uniformity`,
-amplificada aqui para tornar o efeito visível):
+On the same ill-conditioned matrix ($\kappa(X) \approx 2\times10^8$, three
+nearly duplicated columns — the kind of collinearity that really appears
+between correlated HVI features, like `uhml` and `uniformity`,
+amplified here to make the effect visible):
 
-| Rota                                          | Erro relativo no menor componente         |
+| Route                                          | Relative error on the smallest component         |
 |-----------------------------------------------|-------------------------------------------|
-| via covariância ($X^\top X$ + `qr_algorithm`) | **325%** — sinal perdido                  |
-| via SVD (Jacobi, direto em $X$)               | $1.2\times10^{-10}$ — precisão de máquina |
+| via covariance ($X^\top X$ + `qr_algorithm`) | **325%** — signal lost                  |
+| via SVD (Jacobi, direct on $X$)               | $1.2\times10^{-10}$ — machine precision |
 
-O teste `test_covariance_route_loses_smallest_component_on_ill_conditioned_data`
-prova que a rota via covariância **erra de propósito** nesse regime — não é
-bug a corrigir, é a matemática do $\kappa^2$ se manifestando. E
-`test_agrees_with_covariance_route_when_well_conditioned` prova o outro
-lado: quando $\kappa(X)$ é razoável (como nos dados HVI reais do gerador),
-as duas rotas concordam até $10^{-6}$ — a diferença só aparece, e só
-importa, perto do limite de precisão.
+The `test_covariance_route_loses_smallest_component_on_ill_conditioned_data`
+test proves that the covariance route **gets it wrong on purpose** in this regime — it's not
+a bug to fix, it's the math of $\kappa^2$ manifesting. And
+`test_agrees_with_covariance_route_when_well_conditioned` proves the other
+side: when $\kappa(X)$ is reasonable (as in the generator's real HVI data),
+the two routes agree to $10^{-6}$ — the difference only shows up, and only
+matters, near the precision limit.
 
-## Uma distinção importante com o trade-off do ciclo anterior
+## An important distinction from the previous cycle's trade-off
 
-Este não é o mesmo argumento de Gram-Schmidt vs. Householder. Lá, o
-problema era cancelamento catastrófico — subtração de quantidades quase
-iguais amplificando erro de arredondamento a cada passo. Aqui, o problema
-acontece **antes de qualquer subtração**: é a própria formação de
-$X^\top X$ que já eleva $\kappa$ ao quadrado, de uma vez, na primeira
-linha de código. São duas doenças numéricas diferentes com o mesmo
-sintoma — perda de precisão — e vale a pena não confundir as duas quando
-for diagnosticar um problema real: "meu resultado está impreciso" pode ser
-cancelamento catastrófico OU número de condição ao quadrado, e o remédio é
-diferente em cada caso.
+This isn't the same argument as Gram-Schmidt vs. Householder. There, the
+problem was catastrophic cancellation — subtracting nearly equal quantities
+amplifying rounding error at each step. Here, the problem happens
+**before any subtraction**: it's the very formation of
+$X^\top X$ that already squares $\kappa$, all at once, in the first
+line of code. These are two different numerical diseases with the same
+symptom — loss of precision — and it's worth not confusing the two when
+diagnosing a real problem: "my result is imprecise" could be
+catastrophic cancellation OR a squared condition number, and the remedy is
+different in each case.
 
-## Consequência prática, fora do laboratório
+## Practical consequence, outside the lab
 
-Isso não é curiosidade acadêmica: é por isso que `sklearn.decomposition.PCA`
-usa SVD internamente por padrão, não eigendecomposição da matriz de
-covariância — mesmo sendo matematicamente equivalentes no papel. Qualquer
-dataset real com features correlacionadas (e HVI tem — comprimento e
-uniformidade andam juntos por construção) empurra $\kappa$ para cima, e a
-rota "óbvia" (covariância) é justamente a que degrada primeiro.
+This isn't academic curiosity: it's why `sklearn.decomposition.PCA`
+uses SVD internally by default, not eigendecomposition of the covariance
+matrix — even though they're mathematically equivalent on paper. Any
+real dataset with correlated features (and HVI has them — length and
+uniformity move together by construction) pushes $\kappa$ up, and the
+"obvious" route (covariance) is exactly the one that degrades first.
 
-## Fechando o capstone do Módulo 1
+## Closing Module 1's capstone
 
-Três métodos de autovalores (power iteration, deflação, QR), dois métodos
-de decomposição QR (Gram-Schmidt, Householder), dois métodos de PCA
-(covariância, SVD) — seis implementações, três trade-offs, um padrão comum
-emergindo em todos: **a forma "óbvia" de resolver um problema numérico
-é raramente a forma estável**, e a diferença só aparece quando você sabe
-que procurar por ela — em gaps espectrais estreitos, em colunas quase
-colineares, em números de condição altos. É exatamente essa vigilância que
-a Fase 1 pretendia treinar.
+Three eigenvalue methods (power iteration, deflation, QR), two QR
+decomposition methods (Gram-Schmidt, Householder), two PCA methods
+(covariance, SVD) — six implementations, three trade-offs, one common pattern
+emerging in all of them: **the "obvious" way to solve a numerical problem
+is rarely the stable one**, and the difference only shows up when you know
+to look for it — in narrow spectral gaps, in nearly collinear columns, in high
+condition numbers. This is exactly the vigilance Phase 1 was meant to
+train.

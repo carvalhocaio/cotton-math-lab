@@ -30,7 +30,7 @@ def test_exp_gradient_matches_torch():
 
 @pytest.mark.oracle
 def test_reverse_subtraction_gradient_matches_torch():
-    """5 - x — exercita __rsub__, não só __sub__."""
+    """5 - x — exercises __rsub__, not just __sub__."""
     x = Tensor(2.0)
     y = 5.0 - x
     y.backward()
@@ -43,7 +43,7 @@ def test_reverse_subtraction_gradient_matches_torch():
 
 @pytest.mark.oracle
 def test_division_gradient_matches_torch():
-    """Divisão não tem regra própria — é mul + pow(-1) compostos."""
+    """Division has no rule of its own — it's mul + pow(-1) composed."""
     p, q = Tensor(6.0), Tensor(3.0)
     r = p / q
     r.backward()
@@ -58,7 +58,7 @@ def test_division_gradient_matches_torch():
 
 @pytest.mark.oracle
 def test_nonlinear_composite_gradient_matches_torch():
-    """f = exp(a*b) + a — encadeia produto, exp e soma num só grafo."""
+    """f = exp(a*b) + a — chains product, exp, and sum in a single graph."""
     a, b = Tensor(0.5), Tensor(-1.2)
     f = (a * b).exp() + a
     f.backward()
@@ -76,7 +76,7 @@ def test_pow_rejects_non_scalar_exponent():
     from cotton_math_lab.exceptions import AutodiffError
 
     x = Tensor(2.0)
-    with pytest.raises(AutodiffError, match="escalar"):
+    with pytest.raises(AutodiffError, match="scalar"):
         x ** Tensor(2.0)
 
 
@@ -94,9 +94,10 @@ def test_log_gradient_matches_torch():
 
 @pytest.mark.oracle
 def test_sigmoid_cross_entropy_composition_matches_torch():
-    """Sigmoide não é primitiva — é 1/(1+exp(-z)), pura composição.
-    Cross-entropy binária usa log em cascata com ela. Cobre os dois rótulos,
-    porque cada um exercita um ramo diferente da soma (y·log(p) vs (1-y)·log(1-p))."""
+    """Sigmoid isn't a primitive — it's 1/(1+exp(-z)), pure composition.
+    Binary cross-entropy chains log on top of it. Covers both labels,
+    because each one exercises a different branch of the sum (y·log(p)
+    vs (1-y)·log(1-p))."""
 
     def sigmoid(t):
         return 1.0 / (1.0 + (-t).exp())

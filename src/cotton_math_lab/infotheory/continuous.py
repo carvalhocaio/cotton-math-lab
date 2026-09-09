@@ -1,5 +1,5 @@
-"""KL contínua via integração numérica em grade, e a demonstração da
-assimetria forward vs. reverse KL."""
+"""Continuous KL via numerical grid integration, and the demonstration
+of the forward vs. reverse KL asymmetry."""
 
 import numpy as np
 from scipy import stats
@@ -9,8 +9,8 @@ from scipy.optimize import minimize
 def kl_divergence_grid(
     p_vals: np.ndarray, q_vals: np.ndarray, x_grid: np.ndarray
 ) -> float:
-    """D_KL(p‖q) para densidades contínuas, via regra do trapézio numa
-    grade compartilhada."""
+    """D_KL(p‖q) for continuous densities, via the trapezoidal rule on a
+    shared grid."""
     p_vals = np.clip(p_vals, 1e-300, None)
     q_vals = np.clip(q_vals, 1e-300, None)
     integrand = p_vals * (np.log(p_vals) - np.log(q_vals))
@@ -18,11 +18,11 @@ def kl_divergence_grid(
 
 
 def fit_gaussian_by_forward_kl(target_pdf, x_grid: np.ndarray) -> tuple[float, float]:
-    """Minimiza D_KL(p‖q) sobre q Gaussiana. Tem forma fechada: casamento
-    de momentos — μ = E_p[x], σ² = Var_p[x]. É a propriedade de projeção
-    de momento da KL para famílias exponenciais (Gaussiana é uma delas):
-    minimizar forward KL sobre uma família exponencial sempre reduz a
-    igualar os momentos suficientes, não importa a forma de p.
+    """Minimizes D_KL(p‖q) over a Gaussian q. Has a closed form: moment
+    matching — μ = E_p[x], σ² = Var_p[x]. This is KL's moment-projection
+    property for exponential families (Gaussian is one of them):
+    minimizing forward KL over an exponential family always reduces to
+    matching the sufficient statistics, regardless of p's shape.
     """
     p_vals = target_pdf(x_grid)
     p_vals = p_vals / np.trapezoid(p_vals, x_grid)
@@ -34,11 +34,11 @@ def fit_gaussian_by_forward_kl(target_pdf, x_grid: np.ndarray) -> tuple[float, f
 def fit_gaussian_by_reverse_kl(
     target_pdf, x_grid: np.ndarray, init_mu: float, init_sigma: float = 1.0
 ) -> tuple[float, float]:
-    """Minimiza D_KL(q‖p) sobre q Gaussiana. Sem forma fechada geral —
-    otimização numérica, e o resultado depende do ponto de partida quando
-    p é multimodal: a superfície de reverse KL tem um mínimo local perto
-    de cada modo de p, porque q é penalizada por colocar massa onde p é
-    baixo, mas não é obrigada a cobrir toda a massa de p.
+    """Minimizes D_KL(q‖p) over a Gaussian q. No general closed form —
+    numerical optimization, and the result depends on the starting point
+    when p is multimodal: the reverse KL surface has a local minimum
+    near each mode of p, because q is penalized for placing mass where p
+    is low, but is never required to cover all of p's mass.
     """
     p_vals = target_pdf(x_grid)
     p_vals = p_vals / np.trapezoid(p_vals, x_grid)

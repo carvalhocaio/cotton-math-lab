@@ -30,9 +30,9 @@ def test_bootstrap_ci_matches_scipy_for_the_mean():
 
 @pytest.mark.oracle
 def test_bootstrap_works_for_median_without_closed_form():
-    """A estatística que prova o argumento do ciclo: mediana de uma
-    distribuição assimétrica não tem fórmula fechada simples de erro-padrão
-    — bootstrap não precisa de uma."""
+    """The statistic that proves the cycle's point: the median of a
+    skewed distribution has no simple closed-form standard error —
+    bootstrap doesn't need one."""
     rng = np.random.default_rng(7)
     data = rng.exponential(scale=2.0, size=80)
 
@@ -54,9 +54,9 @@ def test_bootstrap_works_for_median_without_closed_form():
 
 @pytest.mark.slow
 def test_bootstrap_ci_has_approximately_correct_coverage():
-    """O teste que importa de verdade: um IC de 95% deveria conter a
-    verdade em ~95% de repetições independentes do experimento inteiro —
-    não só parecer razoável numa única amostra."""
+    """The test that really matters: a 95% CI should contain the truth
+    in ~95% of independent repetitions of the whole experiment — not
+    just look reasonable on a single sample."""
     rng = np.random.default_rng(2024)
     n_experiments, n_resamples, sample_size = 1000, 500, 50
 

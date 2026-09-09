@@ -14,8 +14,9 @@ N_OBS = 40
 
 @pytest.mark.oracle
 def test_wilson_matches_score_test_inversion():
-    """Valida a forma fechada contra a definição: inversão direta do teste
-    de score numa grade fina de p0, sem assumir a fórmula do Wilson."""
+    """Validates the closed form against the definition: direct
+    inversion of the score test on a fine grid of p0, without assuming
+    the Wilson formula."""
     k, n = 6, 40
     z_crit = stats.norm.ppf(0.975)
     p_hat = k / n
@@ -32,8 +33,8 @@ def test_wilson_matches_score_test_inversion():
 
 @pytest.mark.unit
 def test_credible_interval_captures_exact_confidence_mass():
-    """O intervalo deve conter EXATAMENTE `confidence` de massa sob a
-    posterior - testa a definição do intervalo, não a fórmula."""
+    """The interval must contain EXACTLY `confidence` of the mass under
+    the posterior - tests the interval's definition, not the formula."""
     alpha, beta = 8.0, 34.0
     lower, upper = beta_credible_interval(alpha, beta, confidence=0.95)
     mass = stats.beta.cdf(upper, alpha, beta) - stats.beta.cdf(lower, alpha, beta)
@@ -42,9 +43,10 @@ def test_credible_interval_captures_exact_confidence_mass():
 
 @pytest.mark.unit
 def test_intervals_diverge_with_an_informative_prior():
-    """Prova de divergência num único exemplo concreto: com um prior forte
-    (centrado em 0.20, ANTES de ver os dados), o intervalo de credibilidade
-    e o IC - que não usa prior nenhum - não coincidem."""
+    """Proof of divergence in a single concrete example: with a strong
+    prior (centered at 0.20, BEFORE seeing the data), the credible
+    interval and the confidence interval - which uses no prior - don't
+    coincide."""
     k, n = 6, 40
     ci = wilson_score_interval(k, n)
 
@@ -58,8 +60,9 @@ def test_intervals_diverge_with_an_informative_prior():
 
 @pytest.mark.slow
 def test_ci_coverage_is_robust_regardless_of_prior():
-    """O IC não usa prior nenhum - sua cobertura deveria ficar perto de
-    95% sempre, e é isso que valida a garantia frequentista."""
+    """The confidence interval uses no prior at all - its coverage
+    should stay close to 95% always, and that's what validates the
+    frequentist guarantee."""
     rng = np.random.default_rng(2024)
     n_experiments = 1500
     covered = 0
@@ -78,12 +81,12 @@ def test_ci_coverage_is_robust_regardless_of_prior():
 
 @pytest.mark.slow
 def test_credible_interval_coverage_degrades_with_mismatched_prior():
-    """O ponto central do módulo: um prior forte e DESCASADO com a
-    verdade (centrado em 0.20, verdade é 0.15) faz a cobertura do
-    intervalo de credibilidade cair bem abaixo de 95% — a garantia
-    frequentista simplesmente não existe pra intervalo de credibilidade
-    sob um prior errado, mesmo que a interpretação bayesiana continue
-    válida (95% de crença posterior, dado ESSE prior)."""
+    """The module's central point: a strong prior MISMATCHED with the
+    truth (centered at 0.20, truth is 0.15) makes the credible
+    interval's coverage drop well below 95% — the frequentist guarantee
+    simply doesn't exist for a credible interval under a wrong prior,
+    even though the Bayesian interpretation remains valid (95%
+    posterior belief, given THAT prior)."""
     rng = np.random.default_rng(2024)
     n_experiments = 1500
     mismatched_prior = (40.0, 160.0)
@@ -97,14 +100,15 @@ def test_credible_interval_coverage_degrades_with_mismatched_prior():
             covered += 1
 
     coverage = covered / n_experiments
-    assert coverage < 0.85  # bem baixo dos 95% nominais
+    assert coverage < 0.85  # well below the nominal 95%
 
 
 @pytest.mark.slow
 def test_credible_interval_coverage_recovers_with_weak_prior():
-    """Com um prior fraco (quase não-informativo), o intervalo de
-    credibilidade recupera cobertura frequentista próxima de 95% — os
-    dois enquadramentos convergem numericamente quando o prior não pesa."""
+    """With a weak (nearly non-informative) prior, the credible
+    interval recovers frequentist coverage close to 95% — the two
+    framings converge numerically when the prior carries little
+    weight."""
     rng = np.random.default_rng(2024)
     n_experiments = 1500
     covered = 0

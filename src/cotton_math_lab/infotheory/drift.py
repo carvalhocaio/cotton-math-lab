@@ -1,4 +1,4 @@
-"""JS como detector de drift — simétrica e limitada, ao contrário de KL."""
+"""JS as a drift detector — symmetric and bounded, unlike KL."""
 
 import numpy as np
 
@@ -6,13 +6,13 @@ from cotton_math_lab.infotheory.discrete import kl_divergence_discrete
 
 
 def js_divergence_discrete(p: np.ndarray, q: np.ndarray) -> float:
-    """D_JS(p,q) = ½·D_KL(p‖m) + ½·D_KL(q‖m), com m = (p+q)/2.
+    """D_JS(p,q) = ½·D_KL(p‖m) + ½·D_KL(q‖m), with m = (p+q)/2.
 
-    Ao contrário de KL, é simétrica e limitada (0 ≤ D_JS ≤ log 2) —
-    propriedades que fazem dela uma escolha melhor que KL pra medir
-    "quão diferentes" duas distribuições são, mesmo não sendo uma métrica
-    formal (a raiz quadrada, não D_JS em si, satisfaz desigualdade
-    triangular — é a distância de Jensen-Shannon).
+    Unlike KL, it's symmetric and bounded (0 ≤ D_JS ≤ log 2) —
+    properties that make it a better choice than KL for measuring "how
+    different" two distributions are, even though it isn't a formal
+    metric itself (the square root, not D_JS itself, satisfies the
+    triangle inequality — that's the Jensen-Shannon distance).
     """
     p = np.asarray(p, dtype=np.float64)
     q = np.asarray(q, dtype=np.float64)
@@ -23,9 +23,9 @@ def js_divergence_discrete(p: np.ndarray, q: np.ndarray) -> float:
 def histogram_distribution(
     values: np.ndarray, bin_edges: np.ndarray, smoothing: float = 1e-6
 ) -> np.ndarray:
-    """Amostra contínua -> distribuição discreta via histograma, com
-    suavização mínima pra evitar probabilidade zero absoluta (que
-    quebraria KL/JS por log(0))."""
+    """Continuous sample -> discrete distribution via histogram, with
+    minimal smoothing to avoid absolute zero probability (which would
+    break KL/JS via log(0))."""
     counts, _ = np.histogram(values, bins=bin_edges)
     counts = counts.astype(np.float64) + smoothing
     return counts / counts.sum()
@@ -38,12 +38,12 @@ def detect_drift(
     bins: int = 20,
     threshold: float = 0.05,
 ) -> tuple[bool, float]:
-    """Compara a distribuição de `current` contra `baseline` via JS.
+    """Compares the distribution of `current` against `baseline` via JS.
 
-    Retorna (houve_drift, divergência_js). O threshold é uma escolha de
-    projeto, não um valor universal — calibrável a partir de dado
-    histórico de quanto a variação natural entre safras genuinamente
-    semelhantes costuma produzir.
+    Returns (drift_detected, js_divergence). The threshold is a design
+    choice, not a universal value — calibratable from historical data on
+    how much natural variation between genuinely similar seasons
+    typically produces.
     """
     combined = np.concatenate([baseline, current])
     bin_edges = np.histogram_bin_edges(combined, bins=bins)

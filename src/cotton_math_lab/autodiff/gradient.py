@@ -1,4 +1,4 @@
-"""Gradiente analítico de f: R^n -> R via um único backward()."""
+"""Analytic gradient of f: R^n -> R via a single backward()."""
 
 import numpy as np
 
@@ -6,13 +6,14 @@ from cotton_math_lab.autodiff.tensor import Tensor
 
 
 def gradient(f, x0: np.ndarray) -> np.ndarray:
-    """Gradiente  exato de f em x0.
+    """Exact gradient of f at x0.
 
-    `f` recebe uma lista de n Tensores escalares e devolve UM Tensor
-    escalar. Como a saída é escalar (m=1), uma úniica passada reversa basta
-    - é o caso degenerado de `jacobian` quando m=1, mas vale ter a função
-    própria: fica explícito que a saída é vetor, não matriz linha, e é o
-    bloco de construção do módulo de Hessian logo abaixo.
+    `f` receives a list of n scalar Tensors and returns ONE scalar
+    Tensor. Since the output is scalar (m=1), a single reverse pass is
+    enough — it's the degenerate case of `jacobian` when m=1, but it's
+    worth having its own function: it makes explicit that the output is
+    a vector, not a row matrix, and it's the building block for the
+    Hessian module right below.
     """
     x0 = np.asarray(x0, dtype=np.float64)
     inputs = [Tensor(value) for value in x0]

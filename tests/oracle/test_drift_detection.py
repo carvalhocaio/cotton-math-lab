@@ -11,8 +11,9 @@ Q = np.array([0.2, 0.3, 0.5])
 
 @pytest.mark.oracle
 def test_js_matches_scipy():
-    """scipy.spatial.distance.jensenshannon devolve a RAIZ da divergência
-    (a distância JS) — eleva ao quadrado pra comparar com a divergência."""
+    """scipy.spatial.distance.jensenshannon returns the SQUARE ROOT of
+    the divergence (the JS distance) — square it to compare with the
+    divergence."""
     ours = js_divergence_discrete(P, Q)
     scipy_distance = jensenshannon(P, Q, base=np.e)
     assert ours == pytest.approx(scipy_distance**2)
@@ -30,8 +31,8 @@ def test_js_is_zero_for_identical_distributions():
 
 @pytest.mark.unit
 def test_js_is_bounded_by_log_2():
-    """JS nunca ultrapassa log(2) — o caso extremo é distribuições
-    completamente disjuntas (nenhum suporte compartilhado)."""
+    """JS never exceeds log(2) — the extreme case is completely disjoint
+    distributions (no shared support)."""
     disjoint_p = np.array([1.0, 0.0, 0.0])
     disjoint_q = np.array([0.0, 0.0, 1.0])
     assert js_divergence_discrete(disjoint_p, disjoint_q) == pytest.approx(np.log(2))
@@ -39,9 +40,9 @@ def test_js_is_bounded_by_log_2():
 
 @pytest.mark.unit
 def test_detect_drift_distinguishes_sampling_noise_from_real_shift():
-    """A aplicação real: duas safras da MESMA distribuição (só ruído
-    amostral) não deveriam disparar o detector; uma safra com
-    deslocamento real de média deveria disparar, com folga."""
+    """The real application: two seasons from the SAME distribution
+    (just sampling noise) shouldn't trigger the detector; a season with
+    a real mean shift should trigger it, with margin to spare."""
     spec = default_spec()
     baseline = generate_bales(spec, n=1000, seed=1)
     same_distribution = generate_bales(spec, n=1000, seed=2)

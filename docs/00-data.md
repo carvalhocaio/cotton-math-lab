@@ -1,34 +1,34 @@
-# 00 — Gerador Sintético de Dados HVI
+# 00 — Synthetic HVI Data Generator
 
-## Por que dados sintéticos, e não dados reais da empresa?
+## Why synthetic data, and not real company data?
 
-O uso de dados sintéticos oferece uma vantagem pedagógica importante: todos os parâmetros do modelo são conhecidos por construção. Como os valores utilizados para gerar os dados são previamente definidos, é possível verificar se os algoritmos implementados conseguem recuperar esses mesmos parâmetros, avaliando objetivamente sua corretude.
+Using synthetic data offers an important pedagogical advantage: every model parameter is known by construction. Since the values used to generate the data are defined ahead of time, it's possible to check whether the implemented algorithms can recover those same parameters, objectively evaluating their correctness.
 
-Em dados reais, os parâmetros verdadeiros são desconhecidos. Assim, mesmo que uma estimativa pareça plausível, não existe uma referência exata para medir sua precisão. Já em dados sintéticos, pode-se comparar diretamente o valor estimado com o valor utilizado na geração dos dados, permitindo validar tanto a implementação quanto o comportamento estatístico do método.
+With real data, the true parameters are unknown. So even if an estimate looks plausible, there's no exact reference against which to measure its precision. With synthetic data, on the other hand, the estimated value can be compared directly against the value used to generate the data, allowing both the implementation and the statistical behavior of the method to be validated.
 
-Essa estratégia torna-se especialmente importante no Módulo 3, em que a estimação por Máxima Verossimilhança (MLE) deve recuperar os parâmetros utilizados na geração da distribuição. Se as estimativas convergem para os valores conhecidos, há uma evidência concreta de que a implementação está correta antes de sua aplicação em dados reais.
+This strategy becomes especially important in Module 3, where Maximum Likelihood Estimation (MLE) must recover the parameters used to generate the distribution. If the estimates converge to the known values, that's concrete evidence that the implementation is correct before applying it to real data.
 
 ---
 
-## Por que Cholesky, e não `rng.multivariate_normal`?
+## Why Cholesky, and not `rng.multivariate_normal`?
 
-Fato: se $z \sim \mathcal{N}(0, I)$ e $\Sigma = LL^\top$ (Cholesky), então
+Fact: if $z \sim \mathcal{N}(0, I)$ and $\Sigma = LL^\top$ (Cholesky), then
 
 $$
 \mu + Lz \sim \mathcal{N}(\mu, \Sigma).
 $$
 
-Embora a função `rng.multivariate_normal` produza o mesmo resultado, implementar explicitamente a fatoração de Cholesky torna o processo de geração dos dados transparente. Em vez de utilizar uma função de alto nível como uma "caixa-preta", fica evidente que a geração de variáveis correlacionadas consiste em transformar uma distribuição normal, padrão por meio da matriz $L$, que funciona como uma "raiz quadrada" da matriz de covariância.
+Although the `rng.multivariate_normal` function produces the same result, explicitly implementing the Cholesky factorization makes the data generation process transparent. Instead of using a high-level function as a "black box", it becomes clear that generating correlated variables consists of transforming a standard normal distribution via the matrix $L$, which acts as a "square root" of the covariance matrix.
 
-Além do ganho didático, essa fatoração reaparece em diversos algoritmos estudados posteriormente. No Módulo 4, ela é utilizada na construção de pré-condicionadores para melhorar a estabilidade e a velocidade de métodos numéricos. Já no Módulo 5, a decomposição de Cholesky é empregada em cálculos envolvendo distribuições gaussianas, como a divergência de Kullback-Leibler (KL), em que são necessárias operações com determinantes e inversas de matrizes de covariância.
+Beyond the pedagogical gain, this factorization reappears in several algorithms studied later. In Module 4, it's used to build preconditioners that improve the stability and speed of numerical methods. In Module 5, the Cholesky decomposition is used in calculations involving Gaussian distributions, such as the Kullback-Leibler (KL) divergence, where operations with determinants and inverses of covariance matrices are needed.
 
-Dessa forma, implementar manualmente a transformação ajuda a compreender um conceito que será reutilizado ao longo de todo o laboratório.
+So, manually implementing the transformation helps build an understanding of a concept that will be reused throughout the entire lab.
 
 ---
 
-## A transformação de Fisher (variance-stabilizing transform)
+## The Fisher transform (variance-stabilizing transform)
 
-Fato: o coeficiente de Pearson vive em $[-1,1]$ e sua variância amostral **depende do próprio valor**. A transformação de Fisher estabiliza essa variância:
+Fact: the Pearson coefficient lives in $[-1,1]$ and its sample variance **depends on the value itself**. The Fisher transform stabilizes that variance:
 
 $$
 z = \operatorname{arctanh}(r)
@@ -37,22 +37,22 @@ z = \operatorname{arctanh}(r)
 \operatorname{SE}(z)\approx\frac{1}{\sqrt{n-3}}.
 $$
 
-Utilizar uma tolerância absoluta, como $|r_{\text{emp}} - r_{\text{true}}| < 0{,}02$, não é uma boa estratégia porque a variabilidade da estimativa depende do próprio valor da correlação. Correlações próximas de $\pm1$ apresentam naturalmente menor variância do que correlações quase inexistentes. Assim, a mesma diferença absoluta pode representar um erro esperado em um caso e um erro estatisticamente improvável em outro.
+Using an absolute tolerance, such as $|r_{\text{emp}} - r_{\text{true}}| < 0{.}02$, isn't a good strategy because the variability of the estimate depends on the correlation value itself. Correlations close to $\pm1$ naturally have lower variance than correlations near zero. So the same absolute difference can represent an expected error in one case and a statistically improbable error in another.
 
-A transformação de Fisher resolve esse problema ao converter a correlação para uma escala em que a variância é aproximadamente constante, com erro-padrão dependente apenas do tamanho da amostra. Isso permite comparar estimativas utilizando um mesmo critério estatístico, independentemente do valor verdadeiro da correlação.
+The Fisher transform solves this problem by converting the correlation to a scale where the variance is approximately constant, with a standard error that depends only on the sample size. This allows estimates to be compared using the same statistical criterion, regardless of the true correlation value.
 
-Esse princípio aparece em diversos outros contextos da Estatística. O logit transforma probabilidades limitadas ao intervalo $(0,1)$ em uma escala ilimitada, enquanto o logaritmo transforma variáveis estritamente positivas para reduzir assimetria e estabilizar a variância. Da mesma forma, as funções de ligação (*link functions*) dos Modelos Lineares Generalizados (GLMs) utilizam transformações para tornar a modelagem mais adequada às propriedades estatísticas dos dados.
+This principle shows up in several other contexts in statistics. The logit transforms probabilities bounded to the $(0,1)$ interval into an unbounded scale, while the logarithm transforms strictly positive variables to reduce skew and stabilize variance. Likewise, the link functions of Generalized Linear Models (GLMs) use transformations to make modeling better suited to the data's statistical properties.
 
 ---
 
-## Decisões de design registradas
+## Recorded design decisions
 
-- **Retorno como `ndarray (n, k)` em vez de `DataFrame`:** mantém a função independente de bibliotecas de análise, reduz overhead e facilita a integração com algoritmos numéricos que operam diretamente sobre arrays do NumPy.
+- **Returns an `ndarray (n, k)` instead of a `DataFrame`:** keeps the function independent of analysis libraries, reduces overhead, and makes integration with numerical algorithms that operate directly on NumPy arrays easier.
 
-- **`seed` explícita em vez do estado global:** garante reprodutibilidade dos experimentos e evita que diferentes partes do código interfiram entre si ao compartilhar o mesmo gerador de números aleatórios.
+- **Explicit `seed` instead of global state:** guarantees reproducibility of experiments and prevents different parts of the code from interfering with each other by sharing the same random number generator.
 
-- **`eq=False` no `frozen dataclass`:** impede comparações automáticas baseadas em igualdade de arrays, evitando ambiguidades e erros como *"The truth value of an array is ambiguous"*.
+- **`eq=False` on the `frozen dataclass`:** prevents automatic comparisons based on array equality, avoiding ambiguities and errors like *"The truth value of an array is ambiguous"*.
 
-- **Ordem das validações (dimensão → positividade → simetria → diagonal → definida positiva):** verifica primeiro condições simples e baratas antes de executar testes computacionalmente mais caros, produzindo mensagens de erro mais claras e específicas.
+- **Order of validations (dimension → positivity → symmetry → diagonal → positive-definite):** checks simple, cheap conditions first before running more computationally expensive tests, producing clearer and more specific error messages.
 
-- **Mensagem de erro informa o menor autovalor:** além de indicar que a matriz não é definida positiva, mostra o quanto ela viola essa condição, facilitando tanto a depuração quanto o ajuste dos parâmetros utilizados.
+- **Error message reports the smallest eigenvalue:** besides indicating that the matrix isn't positive-definite, it shows by how much it violates that condition, making both debugging and adjusting the parameters used easier.

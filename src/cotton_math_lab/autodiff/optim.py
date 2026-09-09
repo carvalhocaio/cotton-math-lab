@@ -1,8 +1,8 @@
-"""Descida de gradiente estocástica - mínima, só o necessário pro capstone.
+"""Stochastic gradient descent - minimal, just what the capstone needs.
 
-Momentum, Nesterov, RMSProp, Adam/AdamW ficam para o Módulo 4
-(Otimização), onde cada variante ganha sua própria comparação de
-trade-offs. Aqui só a forma mais crua do método: um passo, um sinal.
+Momentum, Nesterov, RMSProp, Adam/AdamW are left for Module 4
+(Optimization), where each variant gets its own trade-off comparison.
+Here, just the crudest form of the method: one step, one signal.
 """
 
 import numpy as np
@@ -11,11 +11,11 @@ from cotton_math_lab.autodiff.tensor import Tensor
 
 
 class SGD:
-    """Atualiza cada parâmetro na direção oposta ao seu gradiente.
+    """Updates each parameter in the direction opposite its gradient.
 
-    θ ← θ - lr·∇θ. É o passo mais simples possível de descida de
-    gradiente: nenhuma memória de passos anteriores, nenhuma adaptação de
-    taxa por parâmetro — só o sinal local do gradiente, escalado por `lr`.
+    θ ← θ - lr·∇θ. It's the simplest possible gradient descent step: no
+    memory of previous steps, no per-parameter rate adaptation — just
+    the local gradient signal, scaled by `lr`.
     """
 
     def __init__(self, parameters: list[Tensor], lr: float = 0.01):
@@ -32,21 +32,21 @@ class SGD:
 
 
 class Momentum:
-    """SGD com momentum clássico (heavy ball).
+    """SGD with classic (heavy ball) momentum.
 
     v ← momentum·v + ∇θ
     θ ← θ - lr·v
 
-    O gradiente atual se acumula num "vetor de velocidade" que carrega
-    memória exponencialmente decrescente de gradientes passados. Na
-    direção em que o gradiente aponta consistentemente pro mesmo lado, v
-    cresce e acelera o progresso; na direção em que o gradiente oscila de
-    sinal a cada passo, as contribuições tendem a se cancelar parcialmente
-    ao longo do tempo. Mas repare: v não tem limite superior automático —
-    o passo efetivo pode chegar a ~lr/(1-momentum), bem maior que lr puro.
-    É esse mesmo mecanismo que acelera convergência numa direção suave e
-    que pode desestabilizar numa direção de alta curvatura, dependendo de
-    quão perto do limite de estabilidade o `lr` está.
+    The current gradient accumulates into a "velocity vector" that
+    carries exponentially decaying memory of past gradients. In a
+    direction where the gradient consistently points the same way, v
+    grows and accelerates progress; in a direction where the gradient
+    flips sign every step, the contributions tend to partially cancel
+    out over time. But note: v has no automatic upper bound — the
+    effective step can reach ~lr/(1-momentum), much larger than plain
+    lr. That's the very mechanism that accelerates convergence in a
+    smooth direction and that can destabilize it in a high-curvature
+    direction, depending on how close `lr` is to the stability limit.
     """
 
     def __init__(
@@ -71,21 +71,22 @@ class Momentum:
 
 
 class NesterovMomentum:
-    """Momentum de Nesterov — corrige o gradiente ANTES de aplicar o passo,
-    usando a velocidade que já se acumulou.
+    """Nesterov momentum — corrects the gradient BEFORE applying the
+    step, using the velocity that's already accumulated.
 
     v ← momentum·v + ∇θ
     θ ← θ - lr·(∇θ + momentum·v)
 
-    A formulação clássica de Nesterov calcula o gradiente numa posição
-    "futura" (θ - lr·momentum·v), avaliando a função ali antes de dar o
-    passo — uma segunda passada forward por iteração. O PyTorch (e esta
-    implementação) usa uma reformulação algébrica equivalente que evita
-    essa segunda avaliação: soma momentum·v ao gradiente ATUAL antes de
-    escalar por lr, chegando no mesmo destino sem o custo extra. Na
-    prática, essa correção antecipada reduz o overshoot que faz o
-    Momentum clássico oscilar em superfícies mal-condicionadas — desloca
-    a fronteira de estabilidade, não é só uma variação cosmética.
+    The classic Nesterov formulation computes the gradient at a
+    "future" position (θ - lr·momentum·v), evaluating the function there
+    before taking the step — a second forward pass per iteration.
+    PyTorch (and this implementation) uses an equivalent algebraic
+    reformulation that avoids this second evaluation: it adds
+    momentum·v to the CURRENT gradient before scaling by lr, arriving at
+    the same destination without the extra cost. In practice, this
+    look-ahead correction reduces the overshoot that makes classic
+    Momentum oscillate on ill-conditioned surfaces — it shifts the
+    stability boundary, it's not just a cosmetic variation.
     """
 
     def __init__(
@@ -111,21 +112,21 @@ class NesterovMomentum:
 
 
 class RMSProp:
-    """Adapta o tamanho do passo por parâmetro via média móvel do
-    gradiente ao quadrado — muda de eixo em relação a Momentum: em vez de
-    suavizar a DIREÇÃO do passo, reescala sua MAGNITUDE, parâmetro a
-    parâmetro.
+    """Adapts the step size per parameter via a moving average of the
+    squared gradient — changes axis compared to Momentum: instead of
+    smoothing the DIRECTION of the step, it rescales its MAGNITUDE,
+    parameter by parameter.
 
     v ← α·v + (1-α)·(∇θ)²
     θ ← θ - lr·∇θ / (√v + ε)
 
-    Parâmetros com gradiente historicamente grande (alta curvatura, como
-    y na superfície de teste) acumulam v grande e recebem passo efetivo
-    MENOR; parâmetros com gradiente historicamente pequeno recebem passo
-    efetivo MAIOR. O resultado prático: direções de curvatura muito
-    diferente passam a andar em ritmos parecidos, sem precisar caçar um
-    `lr` que funcione simultaneamente para as duas — o problema que
-    Momentum, no ciclo anterior, não resolvia sozinho.
+    Parameters with historically large gradients (high curvature, like
+    y in the test surface) accumulate a large v and get a SMALLER
+    effective step; parameters with historically small gradients get a
+    LARGER effective step. The practical result: directions with very
+    different curvature end up moving at similar rates, without needing
+    to hunt for an `lr` that works for both simultaneously — the problem
+    Momentum, in the previous cycle, didn't solve on its own.
     """
 
     def __init__(
@@ -158,21 +159,21 @@ class RMSProp:
 
 
 class Adam:
-    """Combina Momentum (média móvel do gradiente) com RMSProp (média
-    móvel do gradiente ao quadrado), mais correção de viés — necessária
-    porque m₀=v₀=0 enviesa as duas médias em direção a zero nos primeiros
-    passos, e os dois enviesam em proporções DIFERENTES (governadas por
-    β₁ e β₂ respectivamente), então o desequilíbrio entre eles distorce o
-    tamanho do passo se não for corrigido.
+    """Combines Momentum (moving average of the gradient) with RMSProp
+    (moving average of the squared gradient), plus bias correction —
+    necessary because m₀=v₀=0 biases both averages toward zero in the
+    first steps, and the two are biased in DIFFERENT proportions
+    (governed by β₁ and β₂ respectively), so the imbalance between them
+    distorts the step size if left uncorrected.
 
     m ← β₁·m + (1-β₁)·∇θ
     v ← β₂·v + (1-β₂)·(∇θ)²
     m̂ ← m / (1-β₁ᵗ),  v̂ ← v / (1-β₂ᵗ)
     θ ← θ - lr·m̂ / (√v̂ + ε)
 
-    Em t=1, a correção cancela exatamente o fator de viés introduzido:
-    m̂ = ∇θ e v̂ = (∇θ)², então m̂/√v̂ = sign(∇θ) — o primeiro passo é
-    sempre ±lr, não importa a magnitude do gradiente inicial.
+    At t=1, the correction exactly cancels the introduced bias factor:
+    m̂ = ∇θ and v̂ = (∇θ)², so m̂/√v̂ = sign(∇θ) — the first step is
+    always ±lr, regardless of the initial gradient's magnitude.
     """
 
     def __init__(
@@ -209,23 +210,23 @@ class Adam:
 
 
 class AdamW(Adam):
-    """Adam com weight decay DESACOPLADO — não é 'Adam + L2 no gradiente'.
+    """Adam with DECOUPLED weight decay — not 'Adam + L2 on the gradient'.
 
     θ ← θ - lr·(m̂/(√v̂+ε) + weight_decay·θ)
 
-    A diferença é onde o termo de decaimento entra. Somar weight_decay·θ
-    ao GRADIENTE (a forma ingênua) faz esse termo virar parte de m e v —
-    e por isso fica reescalado pela adaptação por parâmetro do Adam
-    (1/√v̂). Parâmetros com histórico de gradiente grande (v grande)
-    acabam recebendo MENOS decaimento efetivo; parâmetros com histórico
-    pequeno recebem MAIS — a força de regularização passa a depender do
-    histórico de treino de cada parâmetro, não só do `weight_decay` que
-    você escolheu.
+    The difference is where the decay term enters. Adding
+    weight_decay·θ to the GRADIENT (the naive approach) turns that term
+    into part of m and v — and so it ends up rescaled by Adam's
+    per-parameter adaptation (1/√v̂). Parameters with a history of large
+    gradients (large v) end up receiving LESS effective decay;
+    parameters with a small history receive MORE — the regularization
+    strength ends up depending on each parameter's training history, not
+    just on the `weight_decay` you chose.
 
-    Aqui, o termo `weight_decay·θ` é somado DEPOIS da divisão por √v̂ — nunca
-    entra nas médias móveis, nunca é reescalado pela adaptação. A mesma
-    fração nominal de decaimento se aplica igual a todo parâmetro,
-    independente do quanto ele já se moveu.
+    Here, the `weight_decay·θ` term is added AFTER the division by √v̂ —
+    it never enters the moving averages, never gets rescaled by the
+    adaptation. The same nominal decay fraction applies equally to every
+    parameter, regardless of how much it has already moved.
     """
 
     def __init__(

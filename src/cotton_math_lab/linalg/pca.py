@@ -1,4 +1,4 @@
-"""PCA via eigendecomposição da matriz de covariância (ou correlação)."""
+"""PCA via eigendecomposition of the covariance (or correlation) matrix."""
 
 import numpy as np
 
@@ -12,17 +12,18 @@ def pca_via_covariance(
     k: int | None = None,
     standardize: bool = False,
 ):
-    """PCA decompondo a matriz de covariância com o `qr_algorithm`.
+    """PCA by decomposing the covariance matrix with `qr_algorithm`.
 
-    Se `standardize=True`, cada feature é dividida pelo seu desvio-padrão
-    antes de formar a matriz — decompõe-se a matriz de CORRELAÇÃO, não a
-    covariância bruta. Sem isso, a feature de maior escala numérica domina
-    os primeiros componentes devido à unidade de medida, não por
-    correlação real com as demais variáveis.
+    If `standardize=True`, each feature is divided by its standard
+    deviation before forming the matrix — the CORRELATION matrix is
+    decomposed, not the raw covariance. Without this, the feature with
+    the largest numeric scale dominates the first components because of
+    its unit of measurement, not because of a real correlation with the
+    other variables.
 
-    Retorna (components, explained_variance, mean, scale). `scale` é um
-    vetor de 1s quando `standardize=False`, guardado para permitir
-    reconstrução simétrica nos dois casos.
+    Returns (components, explained_variance, mean, scale). `scale` is a
+    vector of 1s when `standardize=False`, kept to allow symmetric
+    reconstruction in both cases.
     """
     n_samples, n_features = matrix.shape
     mean = matrix.mean(axis=0)
@@ -51,14 +52,15 @@ def pca_via_svd(
     k: int | None = None,
     standardize: bool = False,
 ):
-    """PCA via SVD direta na matriz de dados — nunca forma XᵀX.
+    """PCA via direct SVD on the data matrix — never forms XᵀX.
 
-    Mesma interface e mesmo significado de retorno que `pca_via_covariance`,
-    para que as duas rotas sejam intercambiáveis e comparáveis. A diferença
-    inteira mora em como cada uma chega aos autovalores/autovetores da
-    covariância: aqui, os valores singulares de X já SÃO a raiz quadrada
-    dos autovalores da covariância — sem jamais formar XᵀX como matriz
-    explícita, e, portanto, sem quadrar o número de condição de X no processo.
+    Same interface and return meaning as `pca_via_covariance`, so both
+    routes are interchangeable and comparable. The whole difference lies
+    in how each one arrives at the covariance eigenvalues/eigenvectors:
+    here, X's singular values already ARE the square root of the
+    covariance eigenvalues — without ever forming XᵀX as an explicit
+    matrix, and therefore without squaring X's condition number in the
+    process.
     """
     n_samples, n_features = matrix.shape
     mean = matrix.mean(axis=0)

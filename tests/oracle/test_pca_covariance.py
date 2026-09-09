@@ -37,7 +37,7 @@ def test_components_are_orthonormal():
 
 @pytest.mark.oracle
 def test_component_satisfies_eigen_equation():
-    """Testa a definição (Cov·v = λ·v) — evita ambiguidade de sinal do vetor."""
+    """Tests the definition (Cov·v = λ·v) — avoids the vector's sign ambiguity."""
     bales, _ = _hvi_sample()
     components, explained_variance, mean, scale = pca_via_covariance(bales)
 
@@ -50,7 +50,8 @@ def test_component_satisfies_eigen_equation():
 
 @pytest.mark.oracle
 def test_standardized_variance_sums_to_number_of_features():
-    """Traço da matriz de correlação = p, diagonal toda 1. Invariante, sem oráculo."""
+    """Trace of the correlation matrix = p, diagonal all 1s. Invariant,
+    no oracle needed."""
     bales, spec = _hvi_sample()
     _, explained_variance, _, _ = pca_via_covariance(bales, standardize=True)
     assert explained_variance.sum() == pytest.approx(len(spec.features), rel=1e-3)
@@ -58,7 +59,8 @@ def test_standardized_variance_sums_to_number_of_features():
 
 @pytest.mark.oracle
 def test_raw_covariance_pc1_is_dominated_by_largest_variance_feature():
-    """A pegadinha: sem padronizar, PC1 vira quase só a feature de maior escala."""
+    """The gotcha: without standardizing, PC1 becomes almost just the
+    largest-scale feature."""
     bales, spec = _hvi_sample()
     components, _, _, _ = pca_via_covariance(bales, standardize=False)
 
@@ -70,7 +72,7 @@ def test_raw_covariance_pc1_is_dominated_by_largest_variance_feature():
 
 @pytest.mark.unit
 def test_standardizing_shifts_pc1_away_from_raw_scale_dominance():
-    """A correção: padronizado, PC1 deixa de ser refém da unidade de medida."""
+    """The fix: standardized, PC1 is no longer hostage to the unit of measurement."""
     bales, spec = _hvi_sample()
     raw_components, _, _, _ = pca_via_covariance(bales, standardize=False)
     std_components, _, _, _ = pca_via_covariance(bales, standardize=True)

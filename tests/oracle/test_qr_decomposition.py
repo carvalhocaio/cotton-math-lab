@@ -10,7 +10,7 @@ def _random_matrix(m: int, n: int, seed: int) -> np.ndarray:
 
 
 def _ill_conditioned_matrix() -> np.ndarray:
-    """Colunas quase paralelas: o teste clássico de falha do GS clássico."""
+    """Nearly parallel columns: the classic failure case for classic GS."""
     return np.array(
         [
             [1.0, 1.0, 1.0],
@@ -49,7 +49,7 @@ def test_q_columns_are_orthonormal_when_well_conditioned(qr_impl):
 
 @pytest.mark.oracle
 def test_householder_stays_orthogonal_on_ill_conditioned_matrix():
-    """O teste que prova o trade-off: Householder não degrada perto de zero."""
+    """The test that proves the trade-off: Householder doesn't degrade near zero."""
     matrix = _ill_conditioned_matrix()
     q, _ = qr_householder(matrix)
     gram = q.T @ q
@@ -59,9 +59,10 @@ def test_householder_stays_orthogonal_on_ill_conditioned_matrix():
 
 @pytest.mark.unit
 def test_classical_gram_schmidt_loses_orthogonality_on_ill_conditioned_matrix():
-    """Caracteriza a falha conhecida — não é bug, é o motivo do módulo existir."""
+    """Characterizes the known failure — not a bug, it's the reason the
+    module exists."""
     matrix = _ill_conditioned_matrix()
     q, _ = qr_gram_schmidt(matrix)
     gram = q.T @ q
     orthogonality_error = np.linalg.norm(gram - np.eye(q.shape[1]))
-    assert orthogonality_error > 1e-4  # perde ortogonalidade de verdade
+    assert orthogonality_error > 1e-4  # genuinely loses orthogonality

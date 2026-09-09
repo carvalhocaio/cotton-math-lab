@@ -7,25 +7,25 @@ from cotton_math_lab.autodiff.tensor import Tensor
 
 @pytest.mark.unit
 def test_converges_to_minimum_of_quadratic_bowl():
-    """f(x) = (x-3)² tem mínimo único em x=3 - o teste mais simples do
-    convergência que existe, sem nenhum dado envolvido."""
+    """f(x) = (x-3)² has a unique minimum at x=3 - the simplest possible
+    convergence test, with no data involved."""
     x = Tensor(0.0)
-    optimizar = SGD([x], lr=0.1)
+    optimizer = SGD([x], lr=0.1)
 
     for _ in range(50):
-        optimizar.zero_grad()
+        optimizer.zero_grad()
         loss = (x - 3.0) ** 2
         loss.backward()
-        optimizar.step()
+        optimizer.step()
 
     assert x.data == pytest.approx(3.0, abs=1e-3)
 
 
 @pytest.mark.unit
 def test_converges_on_toy_linear_regression():
-    """y = 2x + 1 exato, sem ruído — w e b devem convergir perto dos
-    valores verdadeiros, e a perda deve cair por pelo menos duas ordens
-    de grandeza."""
+    """y = 2x + 1 exactly, no noise — w and b should converge close to
+    the true values, and the loss should drop by at least two orders of
+    magnitude."""
     xs = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
     ys = 2 * xs + 1.0
 
@@ -68,9 +68,9 @@ def test_zero_grad_resets_all_parameters():
 
 @pytest.mark.unit
 def test_step_moves_parameter_opposite_to_gradient():
-    """Definição de gradiente descendente: passo move CONTRA o gradiente."""
+    """Definition of gradient descent: the step moves AGAINST the gradient."""
     x = Tensor(5.0)
-    x.grad = np.array(2.0)  # gradiente positivo -> deveria diminuir x
+    x.grad = np.array(2.0)  # positive gradient -> x should decrease
 
     SGD([x], lr=0.1).step()
 

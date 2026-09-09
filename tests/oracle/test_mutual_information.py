@@ -8,8 +8,9 @@ from cotton_math_lab.infotheory.mutual_information import mutual_information_bin
 
 @pytest.mark.oracle
 def test_mi_matches_sklearn_with_consistent_binning():
-    """Usa os MESMOS bin edges pros dois cálculos — sem isso, uma pequena
-    diferença de discretização já quebra a comparação exata."""
+    """Uses the SAME bin edges for both calculations — without this, a
+    small discretization difference already breaks the exact
+    comparison."""
     rng = np.random.default_rng(0)
     x = rng.standard_normal(2000)
     y = 0.7 * x + rng.standard_normal(2000) * 0.5
@@ -27,9 +28,9 @@ def test_mi_matches_sklearn_with_consistent_binning():
 
 @pytest.mark.unit
 def test_mi_is_near_zero_for_independent_variables():
-    """Como qualquer estimador com amostra finita, MI tem viés pequeno
-    pra cima mesmo sob independência real — daí a tolerância não ser
-    zero exato, é o mesmo tipo de viés de amostra pequena do Módulo 3."""
+    """Like any estimator with a finite sample, MI has a small upward
+    bias even under true independence — hence the tolerance not being
+    exactly zero, the same kind of small-sample bias seen in Module 3."""
     rng = np.random.default_rng(1)
     x = rng.standard_normal(2000)
     y = rng.standard_normal(2000)
@@ -38,10 +39,10 @@ def test_mi_is_near_zero_for_independent_variables():
 
 @pytest.mark.unit
 def test_mi_detects_nonlinear_dependence_that_correlation_misses():
-    """O argumento central do ciclo: Y=X² com X simétrico em torno de
-    zero tem correlação de Pearson ≈ 0 (a dependência é perfeitamente
-    real, mas não-linear, e Pearson só vê linear) — MI não tem esse
-    ponto cego."""
+    """The cycle's central argument: Y=X² with X symmetric around zero
+    has Pearson correlation ≈ 0 (the dependence is perfectly real, but
+    nonlinear, and Pearson only sees linear) — MI has no such blind
+    spot."""
     rng = np.random.default_rng(2)
     x = rng.uniform(-1, 1, 5000)
     y = x**2
@@ -49,16 +50,16 @@ def test_mi_detects_nonlinear_dependence_that_correlation_misses():
     pearson_correlation = np.corrcoef(x, y)[0, 1]
     mi = mutual_information_binned(x, y, bins=20)
 
-    assert abs(pearson_correlation) < 0.05  # Pearson não vê nada
-    assert mi > 1.0  # MI vê uma dependência forte e real
+    assert abs(pearson_correlation) < 0.05  # Pearson sees nothing
+    assert mi > 1.0  # MI sees a strong, real dependence
 
 
 @pytest.mark.unit
 def test_mi_ranks_correlated_hvi_features_above_uncorrelated_ones():
-    """Aplicação real: nos dados HVI do Módulo 0, MI deveria ser bem
-    maior entre features correlacionadas por construção (uhml,
-    uniformity — correlação 0.55) do que entre features independentes
-    por construção (micronaire, rd — correlação 0)."""
+    """Real application: in Module 0's HVI data, MI should be much
+    larger between features correlated by construction (uhml,
+    uniformity — correlation 0.55) than between features independent by
+    construction (micronaire, rd — correlation 0)."""
     spec = default_spec()
     bales = generate_bales(spec, n=3000, seed=2024)
     idx = {name: i for i, name in enumerate(spec.features)}

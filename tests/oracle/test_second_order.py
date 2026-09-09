@@ -20,9 +20,10 @@ def _rosenbrock_fn(xs):
 
 @pytest.mark.unit
 def test_newton_converges_in_one_step_on_a_quadratic():
-    """Para uma quadrática pura, o passo de Newton é EXATO — a Hessiana é
-    constante, e resolver H·Δx=g dá o mínimo direto, sem nenhuma iteração
-    extra. Isso não é aproximação: é a definição do método."""
+    """For a pure quadratic, the Newton step is EXACT — the Hessian is
+    constant, and solving H·Δx=g gives the minimum directly, with no
+    extra iterations. This isn't an approximation: it's the method's
+    definition."""
     x0 = np.array([10.0, 10.0])
     x1, iterations = newton_minimize(_quadratic, x0, max_iter=1)
 
@@ -32,9 +33,10 @@ def test_newton_converges_in_one_step_on_a_quadratic():
 
 @pytest.mark.unit
 def test_newton_converges_in_far_fewer_iterations_than_first_order():
-    """No Rosenbrock, onde Momentum precisou de 2000 passos pra chegar a
-    ~0.0003 do mínimo, Newton chega a precisão de máquina em menos de 20
-    iterações — o preço dessa velocidade é o assunto do próximo teste."""
+    """On Rosenbrock, where Momentum needed 2000 steps to get within
+    ~0.0003 of the minimum, Newton reaches machine precision in under
+    20 iterations — the price of that speed is the subject of the next
+    test."""
     x_final, iterations = newton_minimize(_rosenbrock_fn, np.array([-1.5, 2.0]))
     distance = np.linalg.norm(x_final - np.array([1.0, 1.0]))
 
@@ -56,10 +58,10 @@ def test_bfgs_matches_scipy_result():
 
 @pytest.mark.unit
 def test_hessian_construction_cost_scales_linearly_with_dimension():
-    """Construir a Hessiana via diferenças finitas custa EXATAMENTE 2n
-    avaliações de f — determinístico, não depende de hardware nem de
-    tempo de parede. Um passo de primeira ordem custa 1 avaliação,
-    sempre, não importa n."""
+    """Building the Hessian via finite differences costs EXACTLY 2n
+    evaluations of f — deterministic, independent of hardware or wall
+    time. A first-order step costs 1 evaluation, always, regardless of
+    n."""
 
     def sum_of_squares(xs):
         total = xs[0] * xs[0]

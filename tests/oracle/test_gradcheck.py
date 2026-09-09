@@ -31,7 +31,7 @@ def test_exp_gradient_matches_finite_differences():
 
 @pytest.mark.oracle
 def test_multivariate_gradient_matches_finite_differences():
-    """f(a,b) = sum(a*b + exp(a)) — cada entrada tem sua própria derivada parcial."""
+    """f(a,b) = sum(a*b + exp(a)) — each entry has its own partial derivative."""
     a0 = np.array([0.3, -0.5, 1.1])
     b0 = np.array([2.0, 1.0, -0.7])
 
@@ -49,10 +49,11 @@ def test_multivariate_gradient_matches_finite_differences():
 @pytest.mark.unit
 def test_h_too_small_degrades_accuracy_via_cancellation():
     """
-    A curva em U: h menor não é sempre melhor — cancelamento domina abaixo de ~1e-6.
+    The U-shaped curve: smaller h isn't always better - cancellation
+    dominates below ~1e-6.
     """
     x0 = np.array([1.5, -2.0, 0.7])
-    exact = 3 * x0**2  # d/dx(x^3) = 3x^2, conhecido em forma fechada
+    exact = 3 * x0**2  # d/dx(x^3) = 3x^2, known in closed form
 
     good = numerical_gradient(lambda v: np.sum(v**3), x0.copy(), h=1e-5)
     too_small = numerical_gradient(lambda v: np.sum(v**3), x0.copy(), h=1e-12)

@@ -8,7 +8,7 @@ from cotton_math_lab.autodiff.jacobian import jacobian, jacobian_forward
 
 @pytest.mark.unit
 def test_dual_multiplication_follows_product_rule():
-    """d/dx(x*x) em x=3 é 2x=6 - a parte dual carrega a derivada."""
+    """d/dx(x*x) at x=3 is 2x=6 - the dual part carries the derivative."""
     x = Dual(3.0, dual=1.0)
     result = x * x
     assert result.real == pytest.approx(9.0)
@@ -35,8 +35,8 @@ def test_jacobian_forward_matches_torch_square_case():
 
 @pytest.mark.unit
 def test_forward_and_reverse_modes_agree():
-    """Duas implementações independentes do mesmo Jacobiano - se concordam,
-    é evidência forte de que ambas estão corretas."""
+    """Two independent implementations of the same Jacobian - if they
+    agree, that's strong evidence both are correct."""
 
     def f(xs):
         x0, x1 = xs
@@ -48,7 +48,7 @@ def test_forward_and_reverse_modes_agree():
 
 @pytest.mark.unit
 def test_reverse_mode_wins_when_outputs_are_few():
-    """n=6 entradas, m1 saída - reverso deveria vencer por margem larga."""
+    """n=6 inputs, m=1 output - reverse should win by a wide margin."""
     calls = {"forward": 0, "reverse": 0}
 
     def f_wide(xs):
@@ -75,7 +75,7 @@ def test_reverse_mode_wins_when_outputs_are_few():
 
 @pytest.mark.unit
 def test_forward_mode_wins_when_inputs_are_few():
-    """n=2 entradas, m=5 saídas - a vantagem se inverte."""
+    """n=2 inputs, m=5 outputs - the advantage flips."""
     calls = {"forward": 0, "reverse": 0}
 
     def f_tall(xs):

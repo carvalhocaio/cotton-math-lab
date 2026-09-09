@@ -35,7 +35,7 @@ def test_multiplication_gradient_matches_torch():
 
 @pytest.mark.oracle
 def test_composite_expression_matches_torch():
-    """f = a*b + b*c + a*c — cobre soma, produto e múltiplos caminhos no grafo."""
+    """f = a*b + b*c + a*c — covers sum, product, and multiple paths in the graph."""
     values = (2.0, -3.0, 4.0)
     a, b, c = (Tensor(v) for v in values)
     f = a * b + b * c + a * c
@@ -52,9 +52,9 @@ def test_composite_expression_matches_torch():
 
 @pytest.mark.oracle
 def test_reused_variable_accumulates_gradient():
-    """y = x*x + x — x aparece em dois caminhos.
+    """y = x*x + x — x appears in two paths.
 
-    O gradiente deve SOMAR, não sobrescrever.
+    The gradient must ADD UP, not overwrite.
     """
     x = Tensor(3.0)
     y = x * x + x
@@ -75,7 +75,7 @@ def test_elementwise_array_gradient_matches_torch():
 
     a, b = Tensor(a_np), Tensor(b_np)
     out = a * b + b
-    out.backward()  # seed = ones_like(out), equivalente a backward de out.sum()
+    out.backward()  # seed = ones_like(out), equivalent to backward of out.sum()
 
     ta = torch.tensor(a_np, requires_grad=True)
     tb = torch.tensor(b_np, requires_grad=True)
@@ -105,7 +105,7 @@ def test_sum_gradient_matches_torch():
 
 @pytest.mark.unit
 def test_root_gradient_is_one():
-    """dy/dy = 1, sempre — é o valor de partida que a regra da cadeia propaga."""
+    """dy/dy = 1, always — it's the starting value the chain rule propagates."""
     x = Tensor(5.0)
     x.backward()
     assert x.grad == pytest.approx(1.0)

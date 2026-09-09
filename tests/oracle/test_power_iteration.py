@@ -5,7 +5,7 @@ from cotton_math_lab.linalg.eigen import power_iteration
 
 
 def _symmetric_psd(n: int, seed: int) -> np.ndarray:
-    """Matriz simétrica positiva-semidefinida A = M·Mᵀ."""
+    """Symmetric positive-semidefinite matrix A = M·Mᵀ."""
     rng = np.random.default_rng(seed)
     m = rng.standard_normal((n, n))
     return m @ m.T
@@ -22,7 +22,7 @@ def test_dominant_eigenvalue_matches_numpy():
 
 @pytest.mark.oracle
 def test_dominant_eigenvector_satisfies_eigen_equation():
-    """A·v = λ·v é o que define o par — testamos a definição, não o vetor."""
+    """A·v = λ·v is what defines the pair — we test the definition, not the vector."""
     matrix = _symmetric_psd(6, seed=1)
     eigenvalue, vector = power_iteration(matrix, seed=0)
 
@@ -39,9 +39,10 @@ def test_eigenvector_is_unit_norm():
 
 @pytest.mark.unit
 def test_converges_faster_with_larger_spectral_gap():
-    """Convergência é geométrica na razão |λ₂/λ₁|: gap maior, menos iterações."""
-    wide = np.diag([10.0, 1.0, 0.5])  # razão 0.1
-    narrow = np.diag([10.0, 9.0, 0.5])  # razão 0.9
+    """Convergence is geometric at the rate |λ₂/λ₁|: a larger gap means
+    fewer iterations."""
+    wide = np.diag([10.0, 1.0, 0.5])  # ratio 0.1
+    narrow = np.diag([10.0, 9.0, 0.5])  # ratio 0.9
 
     _, _, iters_wide = power_iteration(wide, seed=0, return_iters=True)
     _, _, iters_narrow = power_iteration(narrow, seed=0, return_iters=True)
@@ -53,7 +54,7 @@ def test_converges_faster_with_larger_spectral_gap():
 def test_raises_on_non_square_matrix():
     from cotton_math_lab.exceptions import LinAlgError
 
-    with pytest.raises(LinAlgError, match="quadrada"):
+    with pytest.raises(LinAlgError, match="square"):
         power_iteration(np.ones((3, 4)), seed=0)
 
 
@@ -62,6 +63,6 @@ def test_raises_on_non_symmetric_matrix():
     from cotton_math_lab.exceptions import LinAlgError
 
     rng = np.random.default_rng(0)
-    matrix = rng.standard_normal((4, 4))  # não simétrica de propósito
-    with pytest.raises(LinAlgError, match="simétrica"):
+    matrix = rng.standard_normal((4, 4))  # non-symmetric on purpose
+    with pytest.raises(LinAlgError, match="symmetric"):
         power_iteration(matrix, seed=0)

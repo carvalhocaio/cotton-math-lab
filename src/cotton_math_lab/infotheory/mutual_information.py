@@ -1,19 +1,19 @@
-"""Informação mútua via binning — captura dependência que correlação de
-Pearson não vê."""
+"""Mutual information via binning — captures dependence that Pearson
+correlation doesn't see."""
 
 import numpy as np
 
 
 def mutual_information_binned(x: np.ndarray, y: np.ndarray, bins: int = 15) -> float:
-    """I(X;Y) via discretização de x e y em `bins` faixas cada:
+    """I(X;Y) by discretizing x and y into `bins` bins each:
 
     I(X;Y) = Σ p(x,y)·log(p(x,y) / (p(x)·p(y)))
 
-    sobre o histograma conjunto. Diferente da correlação de Pearson, que
-    só mede associação LINEAR, MI captura qualquer forma de dependência
-    estatística — inclusive Y = f(X) para f não-linear, onde a correlação
-    pode ficar arbitrariamente perto de zero mesmo com dependência
-    determinística e perfeita entre as variáveis.
+    over the joint histogram. Unlike Pearson correlation, which only
+    measures LINEAR association, MI captures any form of statistical
+    dependence — including Y = f(X) for nonlinear f, where the
+    correlation can be arbitrarily close to zero even with a
+    deterministic, perfect dependence between the variables.
     """
     joint_counts, _, _ = np.histogram2d(x, y, bins=bins)
     joint_probs = joint_counts / joint_counts.sum()

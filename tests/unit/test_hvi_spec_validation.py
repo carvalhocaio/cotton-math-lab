@@ -6,7 +6,7 @@ from cotton_math_lab.exceptions import InvalidSpecError
 
 
 def _spec_with(**overrides) -> HVISpec:
-    """Constrói um spec a partir do default, com campos substituídos."""
+    """Builds a spec from the default, with fields overridden."""
     base = default_spec()
     fields = {
         "features": base.features,
@@ -21,15 +21,15 @@ def _spec_with(**overrides) -> HVISpec:
 def test_rejects_non_positive_std():
     stds = default_spec().stds.copy()
     stds[3] = -2.5
-    with pytest.raises(InvalidSpecError, match="desvio"):
+    with pytest.raises(InvalidSpecError, match="standard deviation"):
         _spec_with(stds=stds)
 
 
 @pytest.mark.unit
 def test_rejects_asymmetric_correlation():
     corr = default_spec().correlation.copy()
-    corr[1, 2] = 0.9  # sem espelhar em [2, 1]
-    with pytest.raises(InvalidSpecError, match="simétrica"):
+    corr[1, 2] = 0.9  # without mirroring at [2, 1]
+    with pytest.raises(InvalidSpecError, match="symmetric"):
         _spec_with(correlation=corr)
 
 
@@ -54,13 +54,13 @@ def test_rejects_non_positive_definite_correlation():
         corr[idx[a], idx[b]] = value
         corr[idx[b], idx[a]] = value
 
-    with pytest.raises(InvalidSpecError, match="positiva-definida"):
+    with pytest.raises(InvalidSpecError, match="positive-definite"):
         _spec_with(correlation=corr)
 
 
 @pytest.mark.unit
 def test_rejects_mismatched_dimensions():
-    with pytest.raises(InvalidSpecError, match="dimens"):
+    with pytest.raises(InvalidSpecError, match="dimensions"):
         _spec_with(means=np.array([4.3, 29.0]))
 
 

@@ -41,7 +41,7 @@ def test_hessian_matches_torch():
 
 @pytest.mark.unit
 def test_hessian_is_symmetric():
-    """Teorema de Schwarz: derivadas parciais mistas comutam para f suave."""
+    """Schwarz's theorem: mixed partial derivatives commute for smooth f."""
 
     def f(xs):
         x0, x1, x2 = xs
@@ -53,8 +53,8 @@ def test_hessian_is_symmetric():
 
 @pytest.mark.unit
 def test_hessian_of_quadratic_form_is_constant():
-    """f(x) = ½xᵀAx tem Hessiana = A, constante em qualquer ponto — a
-    definição mesma de curvatura constante de uma forma quadrática."""
+    """f(x) = ½xᵀAx has Hessian = A, constant at any point — the very
+    definition of a quadratic form's constant curvature."""
     a = np.array([[4.0, 1.0], [1.0, 2.0]])
 
     def f(xs):

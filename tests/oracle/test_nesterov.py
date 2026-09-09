@@ -42,17 +42,17 @@ def test_nesterov_trajectory_matches_torch():
 
 @pytest.mark.unit
 def test_nesterov_is_more_stable_than_classic_momentum():
-    """No lr onde Momentum clássico já fica PIOR que SGD puro (achado no
-    ciclo anterior), Nesterov continua estável e vence os dois — a
-    correção de 'olhar à frente' desloca a fronteira de estabilidade,
-    não é só elegância teórica."""
+    """At the lr where classic Momentum already gets WORSE than plain
+    SGD (found in the previous cycle), Nesterov stays stable and beats
+    both — the "look-ahead" correction shifts the stability boundary,
+    it's not just theoretical elegance."""
     lr = 0.03
     sgd_loss = _run(SGD, lr=lr)
     momentum_loss = _run(Momentum, lr=lr, momentum=0.9)
     nesterov_loss = _run(NesterovMomentum, lr=lr, momentum=0.9)
 
-    assert momentum_loss > sgd_loss  # reconfirma a instabilidade do ciclo passado
-    assert nesterov_loss < sgd_loss  # Nesterov não sofre da mesma instabilidade
+    assert momentum_loss > sgd_loss  # reconfirms the previous cycle's instability
+    assert nesterov_loss < sgd_loss  # Nesterov doesn't suffer the same instability
 
 
 @pytest.mark.unit

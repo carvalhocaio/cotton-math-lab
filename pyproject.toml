@@ -28,9 +28,9 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "unit: testes rápidos, sem dependência externa",
-    "oracle: valida a implementação contra scipy/sklearn/torch",
-    "slow: testes de convergência ou estatísticos com muitas amostras",
+    "unit: fast tests, no external dependency",
+    "oracle: validates the implementation against scipy/sklearn/torch",
+    "slow: convergence or statistical tests with many samples",
 ]
 addopts = "-q --strict-markers"
 

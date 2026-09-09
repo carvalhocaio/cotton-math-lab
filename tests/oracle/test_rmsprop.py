@@ -31,10 +31,11 @@ def test_rmsprop_trajectory_matches_torch():
 
 @pytest.mark.unit
 def test_rmsprop_equalizes_step_size_across_different_curvatures():
-    """O ponto central do método: apesar de y ter curvatura 10× maior que
-    x (logo, gradiente inicial 10× maior), RMSProp normaliza o passo
-    efetivo — os dois avançam quase igual. SGD não tem essa propriedade:
-    a direção de maior curvatura sempre anda muito mais."""
+    """The core point of the method: even though y has 10× the curvature
+    of x (and thus a 10× larger initial gradient), RMSProp normalizes
+    the effective step — both advance almost equally. SGD doesn't have
+    this property: the higher-curvature direction always moves much
+    more."""
 
     def displacement_ratio(optimizer_cls, steps=3, **kwargs):
         x, y = Tensor(3.0), Tensor(3.0)
@@ -51,15 +52,15 @@ def test_rmsprop_equalizes_step_size_across_different_curvatures():
     sgd_ratio = displacement_ratio(SGD, lr=0.02)
     rmsprop_ratio = displacement_ratio(RMSProp, lr=0.1)
 
-    assert sgd_ratio > 5.0  # SGD: y anda MUITO mais que x
-    assert rmsprop_ratio == pytest.approx(1.0, abs=0.05)  # RMSProp: quase igual
+    assert sgd_ratio > 5.0  # SGD: y moves MUCH more than x
+    assert rmsprop_ratio == pytest.approx(1.0, abs=0.05)  # RMSProp: nearly equal
 
 
 @pytest.mark.unit
 def test_rmsprop_converges_across_a_wide_lr_range():
-    """Ao contrário de Momentum (janela estreita de lr estável), RMSProp
-    converge bem numa faixa ampla — a adaptação por parâmetro compensa
-    boa parte da escolha de lr."""
+    """Unlike Momentum (a narrow window of stable lr), RMSProp converges
+    well over a wide range — the per-parameter adaptation makes up for
+    most of the lr choice."""
 
     def final_loss(lr, steps=40):
         x, y = Tensor(3.0), Tensor(3.0)

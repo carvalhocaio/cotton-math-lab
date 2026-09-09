@@ -1,17 +1,18 @@
-"""Números duais: x + ε·x', com ε² = 0.
+"""Dual numbers: x + ε·x', with ε² = 0.
 
-Cada operação aritmética propaga a derivada com o valor, num único
-passe para frente — ao contrário do modo reverso, que primeiro grava o
-grafo (forward) e só depois propaga gradiente (backward). Forward mode não
-precisa de grafo, nem de fase de backward: a derivada já sai pronta na
-parte dual no mesmo passe que calcula o valor.
+Each arithmetic operation propagates the derivative together with the
+value, in a single forward pass — unlike reverse mode, which first
+records the graph (forward) and only afterward propagates the gradient
+(backward). Forward mode needs no graph and no backward phase: the
+derivative already comes out ready in the dual part, in the same pass
+that computes the value.
 """
 
 import numpy as np
 
 
 class Dual:
-    """Um número dual: `.real` é o valor, `.dual` é a derivada acumulada."""
+    """A dual number: `.real` is the value, `.dual` is the accumulated derivative."""
 
     __slots__ = ("real", "dual")
 
@@ -27,8 +28,8 @@ class Dual:
 
     def __mul__(self, other):
         other = other if isinstance(other, Dual) else Dual(other)
-        # regra do produto sai de graça: (a+εa')(b+εb') = ab + ε(ab'+a'b),
-        # já que ε² = 0 descarta o termo cruzado a'b'ε².
+        # the product rule comes for free: (a+εa')(b+εb') = ab + ε(ab'+a'b),
+        # since ε² = 0 discards the cross term a'b'ε².
         return Dual(
             self.real * other.real,
             self.real * other.dual + self.dual * other.real,

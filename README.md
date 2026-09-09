@@ -1,61 +1,62 @@
 # cotton-math-lab
 
-Laboratório pessoal de matemática e ML aplicado, implementado do zero em
-Python/NumPy e validado contra bibliotecas de referência (`scipy`,
-`scikit-learn`, `torch`). O domínio de exemplo é dados sintéticos de HVI
-(*High Volume Instrument*) de fardos de algodão — gerados com parâmetros
-populacionais conhecidos por construção, o que permite verificar
-objetivamente se cada algoritmo recupera a verdade plantada nos dados.
+Personal math and applied ML lab, implemented from scratch in
+Python/NumPy and validated against reference libraries (`scipy`,
+`scikit-learn`, `torch`). The example domain is synthetic HVI (*High
+Volume Instrument*) data for cotton bales — generated with population
+parameters known by construction, which lets each algorithm be
+objectively checked against whether it recovers the truth planted in
+the data.
 
-O objetivo não é produzir uma biblioteca de uso geral, e sim documentar,
-módulo a módulo, as decisões de design e as descobertas ao reimplementar
-métodos numéricos e estatísticos fundamentais. Cada módulo tem um
-documento correspondente em [`docs/`](docs/) com o raciocínio por trás das
-escolhas de implementação.
+The goal is not to produce a general-purpose library, but to document,
+module by module, the design decisions and discoveries made while
+reimplementing fundamental numerical and statistical methods. Each
+module has a corresponding document in [`docs/`](docs/) with the
+reasoning behind the implementation choices.
 
-## Estrutura
+## Structure
 
 ```
 src/cotton_math_lab/
-├── data/         # gerador sintético de dados HVI (docs/00-data.md)
-├── linalg/       # power iteration, deflação, QR, SVD, PCA (docs/01-linalg.md)
-├── autodiff/     # motor de diferenciação automática em modo reverso,
-│                 # diferenças finitas, Jacobiano/Hessiano, otimizadores
+├── data/         # synthetic HVI data generator (docs/00-data.md)
+├── linalg/       # power iteration, deflation, QR, SVD, PCA (docs/01-linalg.md)
+├── autodiff/     # reverse-mode automatic differentiation engine,
+│                 # finite differences, Jacobian/Hessian, optimizers
 │                 # (SGD, Momentum, Nesterov, RMSProp, Adam, AdamW),
-│                 # regressão logística (docs/02-autodiff.md)
-├── stats/        # MLE, MAP, Beta-Binomial, intervalos, bootstrap
+│                 # logistic regression (docs/02-autodiff.md)
+├── stats/        # MLE, MAP, Beta-Binomial, intervals, bootstrap
 │                 # (docs/03-stats.md)
-├── models/       # regressão logística
-└── infotheory/   # entropia, KL, informação mútua, Jensen-Shannon/drift
+├── models/       # logistic regression
+└── infotheory/   # entropy, KL, mutual information, Jensen-Shannon/drift
                   # (docs/05-infotheory.md)
 ```
 
-Otimização de segunda ordem e benchmarks (Rosenbrock, quadráticas
-mal-condicionadas) estão documentados em `docs/04-optim.md`.
+Second-order optimization and benchmarks (Rosenbrock, ill-conditioned
+quadratics) are documented in `docs/04-optim.md`.
 
 ## Setup
 
-Requer Python 3.12+ e [`uv`](https://docs.astral.sh/uv/).
+Requires Python 3.12+ and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync --all-groups
 ```
 
-## Testes
+## Tests
 
-Os testes são organizados por marker:
+Tests are organized by marker:
 
-- `unit` — testes rápidos, sem dependência externa
-- `oracle` — valida a implementação contra scipy/sklearn/torch
-- `slow` — testes de convergência ou estatísticos com muitas amostras
+- `unit` — fast tests, no external dependency
+- `oracle` — validates the implementation against scipy/sklearn/torch
+- `slow` — convergence or statistical tests with many samples
 
 ```bash
-uv run pytest                    # todos os testes
-uv run pytest -m unit            # apenas unitários
-uv run pytest -m oracle          # apenas validação contra oráculos
+uv run pytest                    # all tests
+uv run pytest -m unit            # unit tests only
+uv run pytest -m oracle          # oracle validation only
 ```
 
-## Lint e formatação
+## Linting and formatting
 
 ```bash
 make lint          # ruff check
@@ -65,15 +66,15 @@ make format-check    # ruff format --check
 make check          # lint + format-check
 ```
 
-## Documentação
+## Documentation
 
-Cada módulo tem um documento em `docs/` explicando o "porquê" das decisões
-de implementação — não apenas o que o código faz, mas por que ele foi
-escrito daquela forma:
+Each module has a document in `docs/` explaining the "why" behind the
+implementation decisions — not just what the code does, but why it was
+written that way:
 
-- [`00-data.md`](docs/00-data.md) — gerador sintético de dados HVI
-- [`01-linalg.md`](docs/01-linalg.md) — álgebra linear
-- [`02-autodiff.md`](docs/02-autodiff.md) — diferenciação automática
-- [`03-stats.md`](docs/03-stats.md) — probabilidade e estatística
-- [`04-optim.md`](docs/04-optim.md) — otimização
-- [`05-infotheory.md`](docs/05-infotheory.md) — teoria da informação
+- [`00-data.md`](docs/00-data.md) — synthetic HVI data generator
+- [`01-linalg.md`](docs/01-linalg.md) — linear algebra
+- [`02-autodiff.md`](docs/02-autodiff.md) — automatic differentiation
+- [`03-stats.md`](docs/03-stats.md) — probability and statistics
+- [`04-optim.md`](docs/04-optim.md) — optimization
+- [`05-infotheory.md`](docs/05-infotheory.md) — information theory

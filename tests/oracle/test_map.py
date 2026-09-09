@@ -9,8 +9,9 @@ TRUE_MU, TRUE_SIGMA = 4.3, 0.4
 
 @pytest.mark.slow
 def test_map_matches_grid_search_posterior():
-    """Valida a forma fechada contra busca em grade na posterior real —
-    nenhuma fórmula assumida, só maximização direta de prior × verossimilhança."""
+    """Validates the closed form against a grid search on the real
+    posterior — no formula assumed, just direct maximization of
+    prior × likelihood."""
     rng = np.random.default_rng(0)
     data = rng.normal(TRUE_MU, TRUE_SIGMA, 5)
     prior_mean, prior_std = 4.0, 0.3
@@ -28,7 +29,7 @@ def test_map_matches_grid_search_posterior():
 
 @pytest.mark.unit
 def test_map_converges_to_mle_with_weak_prior():
-    """Prior quase não-informativo (variância enorme) -> MAP ≈ MLE."""
+    """Nearly non-informative prior (huge variance) -> MAP ≈ MLE."""
     rng = np.random.default_rng(1)
     data = rng.normal(TRUE_MU, TRUE_SIGMA, 10)
 
@@ -39,8 +40,8 @@ def test_map_converges_to_mle_with_weak_prior():
 
 @pytest.mark.unit
 def test_map_converges_to_prior_with_very_informative_prior():
-    """Prior muito confiante (variância minúscula) -> MAP ≈ prior_mean,
-    não importa o que os dados digam."""
+    """Very confident prior (tiny variance) -> MAP ≈ prior_mean, no
+    matter what the data says."""
     rng = np.random.default_rng(2)
     data = rng.normal(TRUE_MU, TRUE_SIGMA, 10)
 
@@ -51,9 +52,9 @@ def test_map_converges_to_prior_with_very_informative_prior():
 
 @pytest.mark.unit
 def test_map_reduces_error_with_small_samples_and_reasonable_prior():
-    """O trade-off central do módulo: com poucos dados, um prior só
-    aproximadamente certo (4.2, não os 4.3 verdadeiros) ainda reduz o erro
-    quadrático médio pela metade em relação ao MLE cru."""
+    """The module's central trade-off: with little data, a prior that's
+    only approximately correct (4.2, not the true 4.3) still cuts the
+    mean squared error in half relative to the raw MLE."""
     rng = np.random.default_rng(2024)
     n_trials, n_small = 5000, 4
 
@@ -67,13 +68,13 @@ def test_map_reduces_error_with_small_samples_and_reasonable_prior():
         ) ** 2
 
     reduction = 1.0 - map_errors.mean() / mle_errors.mean()
-    assert reduction > 0.2  # medido ~50%; margem generosa contra ruído
+    assert reduction > 0.2  # measured ~50%; generous margin against noise
 
 
 @pytest.mark.unit
 def test_map_advantage_vanishes_with_large_samples():
-    """A mesma comparação, mas com n=200 — os dados devem dominar o prior,
-    e a vantagem de MAP sobre MLE deve praticamente desaparecer."""
+    """The same comparison, but with n=200 — the data should dominate
+    the prior, and MAP's advantage over MLE should nearly vanish."""
     rng = np.random.default_rng(2024)
     n_trials, n_large = 5000, 200
 

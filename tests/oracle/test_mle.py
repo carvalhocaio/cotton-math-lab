@@ -27,15 +27,16 @@ def test_mle_normal_matches_scipy():
 
 @pytest.mark.oracle
 def test_mle_normal_matches_gradient_based_optimization():
-    """Valida a forma fechada contra o motor de autodiff do Módulo 2:
-    maximiza a log-verossimilhança numericamente via SGD, partindo de um
-    chute deliberadamente ruim (μ=0), e confere que os dois caminhos —
-    álgebra fechada e otimização por gradiente — chegam no mesmo lugar."""
+    """Validates the closed form against Module 2's autodiff engine:
+    maximizes the log-likelihood numerically via SGD, starting from a
+    deliberately bad guess (μ=0), and checks that the two paths —
+    closed-form algebra and gradient-based optimization — arrive at the
+    same place."""
     data = _micronaire_sample(150)
     mu_closed, sigma_closed = mle_normal(data)
 
     mu = Tensor(0.0)
-    log_sigma = Tensor(0.0)  # sigma = exp(log_sigma) > 0 sempre, por construção
+    log_sigma = Tensor(0.0)  # sigma = exp(log_sigma) > 0 always, by construction
     optimizer = SGD([mu, log_sigma], lr=0.05)
     n = len(data)
 
@@ -56,7 +57,7 @@ def test_mle_normal_matches_gradient_based_optimization():
 
 @pytest.mark.unit
 def test_mle_mean_is_unbiased():
-    """μ_MLE = média amostral, sempre não-enviesado — E[μ̂] = μ verdadeiro."""
+    """μ_MLE = sample mean, always unbiased — E[μ̂] = the true μ."""
     rng = np.random.default_rng(7)
     means = np.array(
         [mle_normal(rng.normal(TRUE_MU, TRUE_SIGMA, 8))[0] for _ in range(3000)]
@@ -66,8 +67,9 @@ def test_mle_mean_is_unbiased():
 
 @pytest.mark.unit
 def test_mle_variance_is_biased_low():
-    """σ²_MLE subestima a variância populacional na razão exata (n-1)/n —
-    a 'correção de Bessel' que MLE não aplica, e todo outro estimador aplica."""
+    """σ²_MLE underestimates the population variance by the exact ratio
+    (n-1)/n — the "Bessel correction" that MLE doesn't apply, and every
+    other estimator does."""
     rng = np.random.default_rng(7)
     n_small = 8
     variances = np.array(

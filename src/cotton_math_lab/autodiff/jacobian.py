@@ -1,4 +1,4 @@
-"""Jacobiano via múltiplas passadas de modo reverso, uma por saída."""
+"""Jacobian via multiple reverse-mode passes, one per output."""
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from cotton_math_lab.autodiff.tensor import Tensor
 
 
 def jacobian(f, x0: np.ndarray) -> np.ndarray:
-    """Jacobiano via m passadas reversas, uma por saída."""
+    """Jacobian via m reverse passes, one per output."""
     x0 = np.asarray(x0, dtype=np.float64)
 
     n_outputs = None
@@ -26,13 +26,13 @@ def jacobian(f, x0: np.ndarray) -> np.ndarray:
 
 
 def jacobian_forward(f, x0: np.ndarray) -> np.ndarray:
-    """Jacobiano via n passadas forward, uma por direção de entrada.
+    """Jacobian via n forward passes, one per input direction.
 
-    Cada passada semeia a parte dual de UMA entrada com 1.0 (as demais em
-    0.0) e lê, no fim, a parte dual de TODAS as saídas de uma vez — o
-    espelho exato do modo reverso: lá, uma passada dá uma linha inteira
-    (todas as entradas, uma saída); aqui, uma passada dá uma coluna
-    inteira (todas as saídas, uma entrada).
+    Each pass seeds the dual part of ONE input with 1.0 (the rest with
+    0.0) and, at the end, reads the dual part of ALL outputs at once —
+    the exact mirror of reverse mode: there, one pass gives an entire
+    row (all inputs, one output); here, one pass gives an entire column
+    (all outputs, one input).
     """
     x0 = np.asarray(x0, dtype=np.float64)
     n_inputs = len(x0)

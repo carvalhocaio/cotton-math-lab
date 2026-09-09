@@ -1,88 +1,88 @@
-# 04 — Otimização
+# 04 — Optimization
 
-Seis otimizadores de primeira ordem, mesma interface (`step()`/`zero_grad()`
-do `SGD` do Módulo 2), cada um validado passo a passo contra o
-`torch.optim` equivalente — não só "converge", trajetória idêntica. Depois,
-Newton e BFGS, reaproveitando `gradient()` e `hessian()` do Módulo 2 sem
-nenhuma matemática nova. O fio condutor: cada método troca uma dor por
-outra, e a dor certa depende da geometria do problema, não de qual método
-está na moda.
+Six first-order optimizers, same interface (`step()`/`zero_grad()`
+from Module 2's `SGD`), each validated step by step against the
+equivalent `torch.optim` — not just "it converges", identical trajectory. Then,
+Newton and BFGS, reusing `gradient()` and `hessian()` from Module 2 with
+no new math. The throughline: each method trades one pain for
+another, and the right pain depends on the problem's geometry, not on which method
+is trendy.
 
 ---
 
-## Momentum: acumula direção, mas amplia o passo efetivo
+## Momentum: accumulates direction, but amplifies the effective step
 
 $$
 v \leftarrow \text{momentum} \cdot v + \nabla\theta, \qquad \theta \leftarrow \theta - \text{lr} \cdot v
 $$
 
-Validado contra `torch.optim.SGD(momentum=...)`, trajetória idêntica.
+Validated against `torch.optim.SGD(momentum=...)`, identical trajectory.
 
-### O achado que não seguiu o roteiro esperado
+### The finding that didn't follow the expected script
 
-Primeira tentativa, mesmo `lr` para SGD e Momentum na superfície
-$f(x,y)=x^2+10y^2$: Momentum ficou **786× pior** que SGD puro. Não é bug —
-Momentum amplia o passo efetivo por um fator perto de $1/(1-\text{momentum})$
-(com momentum=0.9, isso é 10×), e esse fator pode desestabilizar a direção
-de maior curvatura mesmo quando o `lr` nominal parecia razoável. Variando
-`lr`:
+First attempt, same `lr` for SGD and Momentum on the surface
+$f(x,y)=x^2+10y^2$: Momentum ended up **786× worse** than plain SGD. Not a bug —
+Momentum amplifies the effective step by a factor close to $1/(1-\text{momentum})$
+(with momentum=0.9, that's 10×), and this factor can destabilize the
+direction of highest curvature even when the nominal `lr` seemed
+reasonable. Varying `lr`:
 
-| lr | SGD | Momentum | razão |
+| lr | SGD | Momentum | ratio |
 |---|---|---|---|
 | 0.005 | 4.05 | 1.38 | 0.34 |
-| 0.02 | 0.344 | **0.012** | **0.034** (29× melhor) |
-| 0.03 | 0.064 | 0.118 | 1.86 (Momentum já pior) |
+| 0.02 | 0.344 | **0.012** | **0.034** (29× better) |
+| 0.03 | 0.064 | 0.118 | 1.86 (Momentum already worse) |
 
-A vantagem existe, e é grande — mas numa janela estreita de `lr`, não
-universalmente. "Momentum acelera convergência" é verdade condicional, não
-incondicional.
+The advantage exists, and it's large — but within a narrow window of `lr`, not
+universally. "Momentum accelerates convergence" is conditionally true, not
+unconditionally.
 
 ---
 
-## Nesterov: a mesma ideia, olhando à frente
+## Nesterov: the same idea, looking ahead
 
 $$
 v \leftarrow \text{momentum}\cdot v + \nabla\theta, \qquad \theta \leftarrow \theta - \text{lr}\cdot(\nabla\theta + \text{momentum}\cdot v)
 $$
 
-O PyTorch (e esta implementação) usa uma reformulação algébrica que evita
-uma segunda avaliação forward numa posição futura — mesmo resultado, sem o
-custo extra. Validado contra `torch.optim.SGD(nesterov=True)`, diferença
+PyTorch (and this implementation) uses an algebraic reformulation that avoids
+a second forward evaluation at a future position — same result, without the
+extra cost. Validated against `torch.optim.SGD(nesterov=True)`, difference
 $6.8\times10^{-8}$.
 
-### Resolve a instabilidade do ciclo anterior — de verdade
+### Actually resolves the previous cycle's instability
 
-No mesmo `lr=0.03` onde Momentum clássico ficou pior que SGD (0.118 vs
-0.064), Nesterov chegou a **0.0103** — melhor que os dois. Em `lr=0.04`,
-Momentum piora ainda mais (0.768); Nesterov continua estável (0.0007). A
-correção de "olhar à frente" desloca a fronteira de estabilidade — não é
-só elegância teórica.
+At the same `lr=0.03` where classic Momentum ended up worse than SGD (0.118 vs
+0.064), Nesterov reached **0.0103** — better than both. At `lr=0.04`,
+Momentum gets even worse (0.768); Nesterov stays stable (0.0007). The
+"look-ahead" correction shifts the stability boundary — it's not
+just theoretical elegance.
 
 ---
 
-## RMSProp: muda de eixo — escala, não direção
+## RMSProp: changes axis — scale, not direction
 
 $$
 v \leftarrow \alpha v + (1-\alpha)(\nabla\theta)^2, \qquad \theta \leftarrow \theta - \text{lr}\cdot\frac{\nabla\theta}{\sqrt{v}+\epsilon}
 $$
 
-Validado contra `torch.optim.RMSprop`, diferença $\sim10^{-8}$.
+Validated against `torch.optim.RMSprop`, difference $\sim10^{-8}$.
 
-### A prova de que ele equaliza escalas, com um número
+### The proof that it equalizes scales, with a number
 
-Na superfície com curvatura 10× maior em $y$ que em $x$: com SGD, o passo
-em $y$ foi **6.8× maior** que em $x$ — a curvatura vira direto passo
-desigual. Com RMSProp, a razão caiu pra **1.000**. Os dois parâmetros
-avançam igual, apesar da curvatura brutalmente diferente — a adaptação por
-parâmetro funcionando, não uma alegação de manual.
+On the surface with 10× more curvature in $y$ than in $x$: with SGD, the step
+in $y$ was **6.8× larger** than in $x$ — curvature directly turns into an
+unequal step. With RMSProp, the ratio dropped to **1.000**. Both parameters
+advance equally, despite the drastically different curvature — per-parameter
+adaptation actually working, not just a claim from a manual.
 
-Consequência prática: RMSProp converge bem numa faixa de `lr` **muito**
-mais ampla que Momentum precisou (testado 0.1 a 0.3, todos convergindo a
-perda $<10^{-4}$) — não precisa caçar o `lr` certo do mesmo jeito.
+Practical consequence: RMSProp converges well over a **much**
+wider `lr` range than Momentum needed (tested 0.1 to 0.3, all converging to
+loss $<10^{-4}$) — no need to hunt for the right `lr` the same way.
 
 ---
 
-## Adam: os dois eixos juntos, mais correção de viés
+## Adam: both axes together, plus bias correction
 
 $$
 m \leftarrow \beta_1 m + (1-\beta_1)\nabla\theta, \quad v \leftarrow \beta_2 v + (1-\beta_2)(\nabla\theta)^2
@@ -91,163 +91,164 @@ $$
 \hat{m} = \frac{m}{1-\beta_1^t}, \quad \hat{v} = \frac{v}{1-\beta_2^t}, \quad \theta \leftarrow \theta - \text{lr}\cdot\frac{\hat{m}}{\sqrt{\hat{v}}+\epsilon}
 $$
 
-Validado contra `torch.optim.Adam`, diferença $\sim10^{-7}$.
+Validated against `torch.optim.Adam`, difference $\sim10^{-7}$.
 
-### Por que a correção de viés existe: um invariante exato
+### Why bias correction exists: an exact invariant
 
-Em $t=1$, a correção cancela exatamente o fator de viés introduzido:
-$\hat{m}=\nabla\theta$ e $\hat{v}=(\nabla\theta)^2$, então
-$\hat{m}/\sqrt{\hat{v}} = \text{sign}(\nabla\theta)$ — **o primeiro passo do
-Adam é sempre $\pm\text{lr}$, independente da magnitude do gradiente
-inicial**. Testado com gradientes de 0.001 a 500: todos deram passo
-$\approx\text{lr}$, até a quarta casa decimal.
+At $t=1$, the correction exactly cancels the introduced bias factor:
+$\hat{m}=\nabla\theta$ and $\hat{v}=(\nabla\theta)^2$, so
+$\hat{m}/\sqrt{\hat{v}} = \text{sign}(\nabla\theta)$ — **Adam's first
+step is always $\pm\text{lr}$, regardless of the initial gradient's
+magnitude**. Tested with gradients from 0.001 to 500: all gave a step
+$\approx\text{lr}$, to the fourth decimal place.
 
-Sem a correção, o primeiro passo fica inflado por um fator
-$(1-\beta_1)/\sqrt{1-\beta_2}$ — com os betas padrão, $\approx3.16\times$
-maior que deveria. A raiz só entra do lado de $v$ (que carrega
-$(\nabla\theta)^2$); o lado de $m$ não tem raiz — essa assimetria entre
-como $\beta_1$ e $\beta_2$ enviesam suas respectivas médias é exatamente o
-que a correção resolve.
+Without the correction, the first step ends up inflated by a factor
+$(1-\beta_1)/\sqrt{1-\beta_2}$ — with the default betas, $\approx3.16\times$
+larger than it should be. The square root only applies to the $v$ side (which carries
+$(\nabla\theta)^2$); the $m$ side has no root at all — this asymmetry between
+how $\beta_1$ and $\beta_2$ bias their respective averages is exactly what
+the correction fixes.
 
 ---
 
-## AdamW: por que não é "Adam + weight decay"
+## AdamW: why it isn't "Adam + weight decay"
 
 $$
 \theta \leftarrow \theta - \text{lr}\cdot\left(\frac{\hat{m}}{\sqrt{\hat{v}}+\epsilon} + \text{weight\_decay}\cdot\theta\right)
 $$
 
-Validado contra `torch.optim.AdamW`, diferença $\sim10^{-6}$.
+Validated against `torch.optim.AdamW`, difference $\sim10^{-6}$.
 
-### A demonstração com dois parâmetros de histórico diferente
+### The demonstration with two parameters of different history
 
-Dois parâmetros, mesmo valor inicial, históricos de gradiente radicalmente
-diferentes (um recebe gradiente 10.000× maior que o outro por 20 passos),
-depois gradiente real zerado — só o efeito do `weight_decay` observado:
+Two parameters, same initial value, radically different gradient
+histories (one receives a gradient 10,000× larger than the other for 20 steps),
+then the real gradient is zeroed — only the `weight_decay` effect is observed:
 
-| Método | decaimento relativo (histórico grande) | decaimento relativo (histórico pequeno) |
+| Method | relative decay (large history) | relative decay (small history) |
 |---|---|---|
 | AdamW | 56.93% | 56.93% |
-| "Adam + L2 no gradiente" | 43.6% | 68.6% |
+| "Adam + L2 in the gradient" | 43.6% | 68.6% |
 
-Com AdamW, os dois decaem **na mesma proporção** — o `weight_decay`
-nominal é a força de regularização real, ponto final. Com a forma ingênua
-(somar `weight_decay·θ` ao gradiente antes do Adam processar), o termo de
-decaimento entra nas médias móveis e fica reescalado pela adaptação por
-parâmetro: o parâmetro com $v$ grande (histórico de gradiente grande)
-recebe **menos** decaimento efetivo; o de $v$ pequeno recebe **mais**. A
-força de regularização passa a depender do histórico de treino de cada
-parâmetro — não é o que ninguém pretende quando escolhe um
+With AdamW, both decay by **the same proportion** — the nominal
+`weight_decay` is the real regularization strength, full stop. With the naive
+form (adding `weight_decay·θ` to the gradient before Adam processes it), the decay
+term enters the moving averages and ends up rescaled by the
+per-parameter adaptation: the parameter with a large $v$ (large gradient
+history) receives **less** effective decay; the one with a small $v$ receives
+**more**. The regularization strength ends up depending on each
+parameter's training history — not what anyone intends when choosing a
 `weight_decay=0.01`.
 
-`AdamW` herda de `Adam` por código (só `step()` muda) — a única vez no
-módulo em que um otimizador reaproveita outro por herança, porque aqui a
-relação genuinamente é "a mesma coisa, mais um termo", diferente de
-Momentum→Nesterov ou RMSProp→Adam, que são famílias de regra distintas.
+`AdamW` inherits from `Adam` in code (only `step()` changes) — the only
+time in the module where one optimizer reuses another via inheritance, because here the
+relationship genuinely is "the same thing, plus one term", unlike
+Momentum→Nesterov or RMSProp→Adam, which are distinct rule families.
 
 ---
 
-## Rosenbrock: o benchmark que desmente o clichê "Adam é sempre melhor"
+## Rosenbrock: the benchmark that debunks the "Adam is always better" cliché
 
 $$
-f(x,y) = (1-x)^2 + 100(y-x^2)^2, \quad \text{mínimo em } (1,1)
+f(x,y) = (1-x)^2 + 100(y-x^2)^2, \quad \text{minimum at } (1,1)
 $$
 
-Vale estreito e **curvo** (segue a parábola $y=x^2$) — diferente da
-quadrática dos ciclos anteriores, cujos eixos principais coincidem com
-$x$ e $y$. A dificuldade aqui não é escala desigual, é trajetória curva.
+A narrow, **curved** valley (follows the parabola $y=x^2$) — unlike
+the ill-conditioned quadratic from the previous cycles, whose principal axes
+coincide with $x$ and $y$. The difficulty here isn't unequal scale,
+it's a curved trajectory.
 
-Rodando os seis, mesmo orçamento de 2000 passos, `lr` ajustado por método:
+Running all six, same budget of 2000 steps, `lr` tuned per method:
 
-| Otimizador | distância ao mínimo |
+| Optimizer | distance to the minimum |
 |---|---|
-| SGD | 0.82 (não saiu do lugar) |
+| SGD | 0.82 (didn't move) |
 | **Momentum** | **0.0003** |
 | **Nesterov** | **0.0002** |
 | RMSProp | 0.12 |
 | Adam | 0.19 |
 
-Momentum e Nesterov **venceram** os métodos adaptativos, por uma margem
-grande. A razão: no fundo do vale, o gradiente aponta consistentemente na
-mesma direção geral por muitos passos seguidos — exatamente o regime em
-que acumular direção (Momentum) ganha mais do que normalizar escala por
-coordenada (Adam/RMSProp), porque aqui o desafio nunca foi escala desigual
-entre eixos. "Adam é sempre a escolha segura" é folclore, não teorema — a
-geometria do problema decide, e às vezes decide contra o que todo blog de
-deep learning sugere de cabeça.
+Momentum and Nesterov **beat** the adaptive methods, by a large margin.
+The reason: at the bottom of the valley, the gradient consistently points in
+the same general direction for many steps in a row — exactly the regime
+where accumulating direction (Momentum) wins over normalizing scale per
+coordinate (Adam/RMSProp), because here the challenge was never unequal scale
+between axes. "Adam is always the safe choice" is folklore, not a theorem — the
+problem's geometry decides, and sometimes it decides against what every
+deep learning blog suggests off the top of its head.
 
 ---
 
-## Newton e BFGS: rápido em iterações, caro por iteração
+## Newton and BFGS: fast in iterations, expensive per iteration
 
 $$
 \theta \leftarrow \theta - H^{-1}\nabla\theta
 $$
 
-Reaproveita `gradient()` e `hessian()` do Módulo 2 direto — nenhuma
-matemática nova.
+Directly reuses `gradient()` and `hessian()` from Module 2 — no new
+math.
 
-### Um invariante exato
+### An exact invariant
 
-Numa quadrática pura, a Hessiana é constante: o passo de Newton **é** o
-mínimo, não uma aproximação dele. Testado: converge em exatamente 1
-iteração, resultado exato até $10^{-8}$.
+On a pure quadratic, the Hessian is constant: the Newton step **is** the
+minimum, not an approximation of it. Tested: converges in exactly 1
+iteration, result exact to $10^{-8}$.
 
-### No Rosenbrock: 7 iterações contra 2000
+### On Rosenbrock: 7 iterations against 2000
 
-Newton convergiu no Rosenbrock em **7 iterações**, até precisão de
-máquina ($3.5\times10^{-16}$ de distância). Momentum precisou de 2000
-passos pra chegar a $0{,}0003$. Segunda ordem "sabe" a curvatura local e
-não precisa tatear — mas cada iteração custa montar e resolver um sistema
-$n\times n$.
+Newton converged on Rosenbrock in **7 iterations**, down to machine
+precision ($3.5\times10^{-16}$ of distance). Momentum needed 2000
+steps to reach $0{.}0003$. Second order "knows" the local curvature and
+doesn't need to feel its way — but each iteration costs assembling and solving an
+$n\times n$ system.
 
-BFGS (quasi-Newton, aproxima $H^{-1}$ só com gradientes, nunca monta a
-Hessiana verdadeira) convergiu em 35 iterações — mais que Newton, menos
-que milhares de primeira ordem, e validado contra
-`scipy.optimize.minimize(method='BFGS')`, diferença $<10^{-4}$.
+BFGS (quasi-Newton, approximates $H^{-1}$ using only gradients, never
+assembling the true Hessian) converged in 35 iterations — more than Newton, fewer
+than thousands of first-order steps, and validated against
+`scipy.optimize.minimize(method='BFGS')`, difference $<10^{-4}$.
 
-### Por que "morre" em alta dimensão — medido, não assumido
+### Why it "dies" at high dimension — measured, not assumed
 
-Contagem de chamadas a `gradient()` necessárias pra montar a Hessiana via
-diferenças finitas, determinístico (não depende de hardware):
+Count of `gradient()` calls needed to assemble the Hessian via
+finite differences, deterministic (doesn't depend on hardware):
 
-| $n$ | chamadas a `gradient()` | tamanho da Hessiana |
+| $n$ | calls to `gradient()` | Hessian size |
 |---|---|---|
 | 5 | 10 (=2n) | 25 floats |
 | 20 | 40 | 400 floats |
-| 50 | 100 | 2.500 floats |
-| 100 | 200 | 10.000 floats |
-| 300 | 600 | 90.000 floats — **3,25s** só pra montar, neste motor |
+| 50 | 100 | 2,500 floats |
+| 100 | 200 | 10,000 floats |
+| 300 | 600 | 90,000 floats — **3.25s** just to assemble, in this engine |
 
-Um passo de Adam ou SGD, em qualquer dimensão: **1** chamada a
-`gradient()`, memória $O(n)$. A Hessiana custa $O(n)$ chamadas de
-gradiente pra construir (mesmo com autodiff exato, não só diferenças
-finitas — é uma propriedade estrutural, não uma limitação desta
-implementação), $O(n^2)$ de memória pra guardar, e resolver o sistema
-linear resultante custa $O(n^3)$ com métodos diretos — o mesmo cubo do
-número de condição que apareceu no Módulo 1 quando $X^\top X$ elevava
-$\kappa$ ao quadrado, agora aparecendo como custo computacional bruto, não
-erro numérico.
+One step of Adam or SGD, at any dimension: **1** call to
+`gradient()`, $O(n)$ memory. The Hessian costs $O(n)$ gradient calls
+to build (even with exact autodiff, not just finite
+differences — it's a structural property, not a limitation of this
+implementation), $O(n^2)$ of memory to store, and solving the resulting
+linear system costs $O(n^3)$ with direct methods — the same cube of the
+condition number that showed up in Module 1 when $X^\top X$ squared
+$\kappa$, now appearing as raw computational cost, not
+numerical error.
 
-Uma rede com 100 parâmetros já leva segundos só pra montar a Hessiana
-neste motor sem otimização. Um modelo real tem milhões a bilhões de
-parâmetros — $O(n)$ gradientes e $O(n^2)$ de memória, sozinhos, já
-inviabilizam o método antes mesmo de cogitar o $O(n^3)$ do sistema linear.
-É por isso que todo otimizador de deep learning é de primeira ordem: não é
-escolha de gosto, é a única classe de método que sobrevive à escala.
+A network with 100 parameters already takes seconds just to assemble the
+Hessian in this unoptimized engine. A real model has millions to billions of
+parameters — $O(n)$ gradients and $O(n^2)$ of memory, alone, already
+make the method infeasible before even considering the $O(n^3)$ of the
+linear system. That's why every deep learning optimizer is first-order: it's not
+a matter of taste, it's the only class of method that survives at scale.
 
 ---
 
-## Fechando o Módulo 4
+## Closing Module 4
 
-Momentum acelera mas pode desestabilizar; Nesterov corrige a
-instabilidade sem abrir mão da aceleração; RMSProp equaliza escala entre
-parâmetros, à custa de perder o acúmulo direcional; Adam junta os dois,
-precisando de correção de viés pra não distorcer os primeiros passos;
-AdamW corrige um acoplamento indesejado entre regularização e adaptação
-que o próprio Adam introduzia sem avisar. Rosenbrock lembra que nenhum
-desses métodos vence sempre — a geometria do problema decide. E Newton
-mostra o outro extremo do espectro inteiro: convergência em poucas
-iterações, ao custo de um crescimento que simplesmente não cabe em escala
-real. Seis trade-offs, cada um medido com números, não assumido por
-reputação.
+Momentum accelerates but can destabilize; Nesterov fixes the
+instability without giving up the acceleration; RMSProp equalizes scale between
+parameters, at the cost of losing directional accumulation; Adam combines both,
+needing bias correction so as not to distort the first steps;
+AdamW fixes an unwanted coupling between regularization and adaptation
+that Adam itself introduced without warning. Rosenbrock is a reminder that none
+of these methods always wins — the problem's geometry decides. And Newton
+shows the other end of the whole spectrum: convergence in few
+iterations, at the cost of growth that simply doesn't fit at real
+scale. Six trade-offs, each measured with numbers, not assumed by
+reputation.

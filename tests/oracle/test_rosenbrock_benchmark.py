@@ -53,18 +53,19 @@ def test_momentum_and_nesterov_reach_near_the_minimum():
 
 @pytest.mark.unit
 def test_plain_sgd_gets_stuck_far_from_minimum():
-    """SGD puro, mesmo orçamento de passos, não chega nem perto — o vale
-    curvo de Rosenbrock é o caso clássico que motiva qualquer variante
-    além do gradiente cru."""
+    """Plain SGD, same step budget, doesn't even get close — Rosenbrock's
+    curved valley is the classic case that motivates any variant beyond
+    the raw gradient."""
     assert _run(SGD, lr=0.001) > 0.3
 
 
 @pytest.mark.unit
 def test_momentum_beats_adaptive_methods_on_rosenbrock():
-    """O contraponto ao clichê 'Adam é sempre melhor': no vale curvo, onde
-    a direção do gradiente é consistente ao longo do caminho, o acúmulo
-    de momentum navega melhor que a normalização agressiva por coordenada
-    dos métodos adaptativos — com este orçamento de passos, pelo menos."""
+    """The counterpoint to the 'Adam is always better' cliché: in the
+    curved valley, where the gradient direction is consistent along the
+    path, accumulating momentum navigates better than the aggressive
+    per-coordinate normalization of adaptive methods — at least with
+    this step budget."""
     momentum_distance = _run(Momentum, lr=0.001, momentum=0.9)
     adam_distance = _run(Adam, lr=0.01)
     rmsprop_distance = _run(RMSProp, lr=0.01)

@@ -1,4 +1,4 @@
-"""Autovalores por métodos iterativos."""
+"""Eigenvalues via iterative methods."""
 
 import numpy as np
 
@@ -14,23 +14,25 @@ def power_iteration(
     tol: float = 1e-12,
     return_iters: bool = False,
 ):
-    """Autovalor dominante (maior em módulo) e seu autovetor.
+    """Dominant eigenvalue (largest in magnitude) and its eigenvector.
 
-    Itera vₖ₊₁ = A·vₖ / ‖A·vₖ‖. A componente do autovetor dominante domina
-    a soma geometricamente, na razão |λ₂/λ₁| por passo — daí a convergência
-    ser rápida quando há um "gap espectral" largo e lenta quando λ₁ ≈ λ₂.
+    Iterates vₖ₊₁ = A·vₖ / ‖A·vₖ‖. The dominant eigenvector's component
+    geometrically dominates the sum, at the rate |λ₂/λ₁| per step —
+    hence convergence being fast when there's a wide "spectral gap" and
+    slow when λ₁ ≈ λ₂.
 
-    O autovalor é lido pelo quociente de Rayleigh λ = vᵀAv / vᵀv, que para v
-    unitário é apenas vᵀAv.
+    The eigenvalue is read off via the Rayleigh quotient λ = vᵀAv / vᵀv,
+    which for a unit v is simply vᵀAv.
     """
     rows, cols = matrix.shape
     if rows != cols:
-        raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
+        raise LinAlgError(f"matrix must be square, received {matrix.shape}")
 
     if not np.allclose(matrix, matrix.T, atol=1e-10):
         raise LinAlgError(
-            "matriz deve ser simétrica — o quociente de Rayleigh só garante "
-            "autovalor real e convergência monotônica para matrizes simétricas"
+            "matrix must be symmetric — the Rayleigh quotient only "
+            "guarantees a real eigenvalue and monotonic convergence for "
+            "symmetric matrices"
         )
 
     rng = np.random.default_rng(seed)
@@ -43,7 +45,7 @@ def power_iteration(
         vector = product / np.linalg.norm(product)
 
         previous = eigenvalue
-        eigenvalue = float(vector @ matrix @ vector)  # quociente de Rayleigh
+        eigenvalue = float(vector @ matrix @ vector)  # Rayleigh quotient
 
         if abs(eigenvalue - previous) < tol:
             break
@@ -61,21 +63,21 @@ def eigen_spectrum(
     max_iter: int = 2000,
     tol: float = 1e-13,
 ):
-    """Os `k` maiores autovalores (decrescente) e autovetores, por deflação.
+    """The `k` largest eigenvalues (descending) and eigenvectors, via deflation.
 
-    Assume `matrix` simétrica. Após extrair (λᵢ, vᵢ) por power iteration,
-    subtrai λᵢ·vᵢvᵢᵀ da matriz — a deflação de Hotelling — de modo que a
-    próxima iteração encontre o par seguinte. Válido porque autovetores de
-    uma matriz simétrica são mutuamente ortogonais.
+    Assumes `matrix` is symmetric. After extracting (λᵢ, vᵢ) via power
+    iteration, subtracts λᵢ·vᵢvᵢᵀ from the matrix — Hotelling deflation —
+    so that the next iteration finds the following pair. Valid because
+    the eigenvectors of a symmetric matrix are mutually orthogonal.
     """
     rows, cols = matrix.shape
     if rows != cols:
-        raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
+        raise LinAlgError(f"matrix must be square, received {matrix.shape}")
 
     if not np.allclose(matrix, matrix.T, atol=1e-10):
         raise LinAlgError(
-            "matriz deve ser simétrica — a deflação de Hotelling depende da "
-            "ortogonalidade de autovetores, que só vale nesse caso"
+            "matrix must be symmetric — Hotelling deflation relies on "
+            "eigenvector orthogonality, which only holds in that case"
         )
 
     n_components = rows if k is None else k
@@ -100,26 +102,28 @@ def qr_algorithm(
     tol: float = 1e-12,
     return_iters: bool = False,
 ):
-    """Espectro completo de uma matriz simétrica via iteração QR sem shift.
+    """Full spectrum of a symmetric matrix via unshifted QR iteration.
 
-    A cada passo, fatora Aₖ = QₖRₖ e recompõe na ordem trocada:
-    Aₖ₊₁ = RₖQₖ. Como Aₖ₊₁ = Qₖᵀ Aₖ Qₖ, cada passo é uma transformação de
-    similaridade ortogonal — os autovalores nunca mudam, só a base. A
-    sequência converge para uma matriz diagonal cujos elementos são os
-    autovalores, e o produto acumulado dos Qₖ converge para os autovetores.
+    At each step, factors Aₖ = QₖRₖ and recomposes in swapped order:
+    Aₖ₊₁ = RₖQₖ. Since Aₖ₊₁ = Qₖᵀ Aₖ Qₖ, each step is an orthogonal
+    similarity transform — the eigenvalues never change, only the basis.
+    The sequence converges to a diagonal matrix whose entries are the
+    eigenvalues, and the accumulated product of the Qₖ converges to the
+    eigenvectors.
 
-    Sem shift, a convergência é geométrica na razão |λₖ₊₁/λₖ| — o mesmo
-    mecanismo da power iteration, porque o QR algorithm é, estruturalmente,
-    iteração de subespaço simultânea. Gaps estreitos convergem devagar.
+    Without a shift, convergence is geometric at the rate |λₖ₊₁/λₖ| —
+    the same mechanism as power iteration, because the QR algorithm is,
+    structurally, simultaneous subspace iteration. Narrow gaps converge
+    slowly.
     """
     rows, cols = matrix.shape
     if rows != cols:
-        raise LinAlgError(f"matriz deve ser quadrada, recebida {matrix.shape}")
+        raise LinAlgError(f"matrix must be square, received {matrix.shape}")
     if not np.allclose(matrix, matrix.T, atol=1e-10):
         raise LinAlgError(
-            "matriz deve ser simétrica — sem isso, autovalores complexos "
-            "aparecem como blocos 2×2 na diagonal e a leitura de np.diag(current) "
-            "não corresponde ao espectro real da matriz"
+            "matrix must be symmetric — without this, complex eigenvalues "
+            "show up as 2×2 blocks on the diagonal and reading "
+            "np.diag(current) doesn't match the matrix's real spectrum"
         )
     n = rows
     current = matrix.astype(np.float64).copy()

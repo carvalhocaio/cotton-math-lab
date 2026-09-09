@@ -1,4 +1,4 @@
-"""Estimação máximo a posteriori (MAP), conjugado Normal-Normal."""
+"""Maximum a posteriori (MAP) estimation, Normal-Normal conjugate."""
 
 import numpy as np
 
@@ -9,19 +9,20 @@ def map_normal_mean(
     prior_mean: float,
     prior_std: float,
 ) -> float:
-    """MAP de μ para dados ~ Normal(μ, σ²) com σ CONHECIDO, prior
+    """MAP of μ for data ~ Normal(μ, σ²) with σ KNOWN, prior
     μ ~ Normal(prior_mean, prior_std²).
 
-    Conjugado Normal-Normal: a posterior de μ também é Normal, e sua média
-    (que coincide com a moda — a posterior é simétrica) é uma média
-    ponderada por PRECISÃO (inverso da variância) entre prior e dados:
+    Normal-Normal conjugate: the posterior of μ is also Normal, and its
+    mean (which coincides with the mode — the posterior is symmetric) is
+    a PRECISION-weighted average (inverse variance) between the prior
+    and the data:
 
-        μ_MAP = (prior_mean·τ₀ + n·x̄·τ_dados) / (τ₀ + n·τ_dados)
+        μ_MAP = (prior_mean·τ₀ + n·x̄·τ_data) / (τ₀ + n·τ_data)
 
-    onde τ₀ = 1/prior_std² e τ_dados = n/σ². Conforme n cresce, o peso dos
-    dados domina e μ_MAP → x̄ (o MLE). Conforme prior_std → 0, μ_MAP →
-    prior_mean, não importa quantos dados existam — um prior confiante
-    demais pode dominar até uma amostra grande.
+    where τ₀ = 1/prior_std² and τ_data = n/σ². As n grows, the data's
+    weight dominates and μ_MAP → x̄ (the MLE). As prior_std → 0, μ_MAP →
+    prior_mean, no matter how much data exists — an overly confident
+    prior can dominate even a large sample.
     """
     n = len(data)
     sample_mean = float(np.mean(data))

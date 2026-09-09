@@ -1,6 +1,5 @@
-"""Newton e quasi-Newton (BFGS) — reaproveitam gradient() e hessian() do
-Módulo 2 diretamente. Nenhuma matemática nova, só uma aplicação nova das
-mesmas peças."""
+"""Newton and quasi-Newton (BFGS) — reuse gradient() and hessian() from
+Module 2 directly. No new math, just a new application of the same pieces."""
 
 import numpy as np
 
@@ -12,15 +11,15 @@ from cotton_math_lab.autodiff.tensor import Tensor
 def newton_minimize(
     f, x0: np.ndarray, max_iter: int = 50, tol: float = 1e-10
 ) -> tuple[np.ndarray, int]:
-    """Método de Newton: a cada passo, resolve H·Δx = -g e anda Δx.
+    """Newton's method: at each step, solves H·Δx = -g and steps by Δx.
 
-    Para uma quadrática, a Hessiana é constante e o passo é EXATO — uma
-    única iteração encontra o mínimo, porque a aproximação quadrática de
-    segunda ordem que o método usa não é uma aproximação nesse caso, é a
-    função exata. Fora de quadráticas, cada passo minimiza a aproximação
-    quadrática local, e a convergência tende a ser rapidíssima perto do
-    mínimo — ao custo de montar e resolver um sistema linear n×n a cada
-    iteração.
+    For a quadratic, the Hessian is constant and the step is EXACT — a
+    single iteration finds the minimum, because the second-order
+    quadratic approximation the method uses isn't an approximation in
+    that case, it's the exact function. Outside of quadratics, each step
+    minimizes the local quadratic approximation, and convergence tends
+    to be extremely fast near the minimum — at the cost of assembling
+    and solving an n×n linear system at every iteration.
     """
     x = np.asarray(x0, dtype=np.float64).copy()
 
@@ -37,15 +36,15 @@ def newton_minimize(
 def bfgs_minimize(
     f, x0: np.ndarray, max_iter: int = 200, tol: float = 1e-8
 ) -> tuple[np.ndarray, int]:
-    """Quasi-Newton BFGS: aproxima a INVERSA da Hessiana a partir só de
-    gradientes, sem nunca montar a Hessiana verdadeira.
+    """Quasi-Newton BFGS: approximates the INVERSE of the Hessian using
+    only gradients, without ever assembling the true Hessian.
 
-    A cada passo, atualiza a aproximação H⁻¹ usando a equação secante — a
-    mudança observada no gradiente informa sobre a curvatura, sem
-    precisar de segunda derivada explícita. Custa O(n²) por passo, bem
-    menos que os O(n) gradientes mais O(n³) de resolver um sistema que
-    Newton puro exige a cada iteração — ao preço de precisar de mais
-    iterações pra convergir com a mesma qualidade.
+    At each step, updates the H⁻¹ approximation using the secant
+    equation — the observed change in the gradient informs curvature,
+    without needing an explicit second derivative. Costs O(n²) per step,
+    much less than the O(n) gradients plus O(n³) of solving a system
+    that pure Newton requires every iteration — at the price of needing
+    more iterations to converge with the same quality.
     """
     x = np.asarray(x0, dtype=np.float64).copy()
     n = len(x)
@@ -76,7 +75,7 @@ def bfgs_minimize(
         sy = s @ y
         if (
             sy > 1e-10
-        ):  # só atualiza com curvatura positiva (mantém H⁻¹ definida positiva)
+        ):  # only update with positive curvature (keeps H⁻¹ positive-definite)
             rho = 1.0 / sy
             identity = np.eye(n)
             h_inv = (identity - rho * np.outer(s, y)) @ h_inv @ (

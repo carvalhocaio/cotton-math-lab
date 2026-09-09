@@ -1,23 +1,24 @@
-"""Verificação de gradientes por diferenças finitas centrais.
+"""Gradient checking via central finite differences.
 
-Serve como oráculo independente de qualquer motor de autodiff — não depende
-do torch existir nem de nenhuma outra biblioteca, só da definição de
-derivada. É o "oráculo dos oráculos": qualquer regra de `_backward` nova
-implementada no motor pode ser validada contra este utilitário sozinho.
+Serves as an oracle independent of any autodiff engine — it doesn't
+depend on torch existing or on any other library, only on the
+definition of the derivative. It's the "oracle of oracles": any new
+`_backward` rule implemented in the engine can be validated against
+this utility alone.
 """
 
 import numpy as np
 
 
 def numerical_gradient(f, x: np.ndarray, h: float = 1e-5) -> np.ndarray:
-    """Gradiente de f em x via diferença finita central, componente a componente.
+    """Gradient of f at x via central finite difference, component by component.
 
-    (f(x + h·eᵢ) - f(x - h·eᵢ)) / (2h) aproxima ∂f/∂xᵢ com erro de
-    truncamento O(h²). Mas h pequeno demais introduz cancelamento
-    catastrófico: f(x+h) e f(x-h) ficam quase iguais, e a subtração perde
-    dígitos significativos. O ponto ótimo empírico para double precision
-    fica perto de h ≈ 1e-5, onde os dois erros — truncamento e
-    cancelamento — se equilibram.
+    (f(x + h·eᵢ) - f(x - h·eᵢ)) / (2h) approximates ∂f/∂xᵢ with
+    truncation error O(h²). But h too small introduces catastrophic
+    cancellation: f(x+h) and f(x-h) become nearly equal, and the
+    subtraction loses significant digits. The empirical optimum for
+    double precision is near h ≈ 1e-5, where the two errors —
+    truncation and cancellation — balance out.
     """
     x = np.asarray(x, dtype=np.float64)
     grad = np.zeros_like(x)

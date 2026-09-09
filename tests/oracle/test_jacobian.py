@@ -28,7 +28,7 @@ def test_jacobian_matches_torch_square_case():
 
 @pytest.mark.oracle
 def test_jacobian_matches_torch_rectangular_case():
-    """f: R^2 -> R^3, mais saídas que entradas."""
+    """f: R^2 -> R^3, more outputs than inputs."""
 
     def g(xs):
         x0, x1 = xs
@@ -48,7 +48,7 @@ def test_jacobian_matches_torch_rectangular_case():
 
 @pytest.mark.unit
 def test_jacobian_row_matches_independent_backward_call():
-    """Propriedade que define o Jacobiano: linha i = gradiente de saída_i sozinha."""
+    """The property that defines the Jacobian: row i = gradient of output_i alone."""
 
     def f(xs):
         x0, x1 = xs
